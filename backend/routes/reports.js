@@ -1,0 +1,217 @@
+import { log } from "console";
+import { Router } from "express";
+
+export function createReportsRouter({ reportsRepo, testRunsRepo, filesRepo, scanReports, scanSerenityLatest }) {
+  const router = Router();
+
+  router.get("/", async (req, res) => {
+    const { page = 1, pageSize = 20, status } = req.query;
+    const filter = {};
+    if (status) filter.status = status;
+    const total = await reportsRepo.count(filter);
+    const items = await reportsRepo.find(filter, { page, pageSize });
+    res.json({ total, items });
+  });
+
+  router.get("/:id([0-9a-fA-F]{24})", async (req, res) => {
+    const report = await reportsRepo.findById(req.params.id);
+    if (!report) return res.status(404).json({ message: "not_found" });
+    res.json(report);
+  });
+
+  router.post("/", async (req, res) => {
+    const body = req.body || {};
+    const created = await reportsRepo.create(body);
+    res.status(201).json(created);
+  });
+
+  router.post("/scan", async (req, res) => {
+    const testRun = await testRunsRepo.create(req.body?.testRun || {});
+    const result = await scanReports(testRun.id);
+    res.json(result);
+  });
+
+  router.post("/serenity/scan", async (req, res) => {
+    const testRun = await testRunsRepo.create(req.body?.testRun || {});
+    const result = await scanSerenityLatest(testRun.id, req.body?.rootDir);
+    res.json(result);
+  });
+
+  router.get("/stats", async (req, res) => {
+    const collections = [
+      { name: "QA", col: "qa-summary" },
+      { name: "CN", col: "cn-summary" },
+    ];
+
+    const results = [];
+
+    for (const { name, col } of collections) {
+      const items = await filesRepo.find(col, { page: 1, pageSize: 1000 });
+
+      let passed = 0;
+      let failed = 0;
+      let broken_flaky = 0;
+      let minTime = null;
+      let maxTime = null;
+      let firstTime = null;
+      let latestTime = null;
+
+      for (const item of items) {
+        const p = Number(item.passing) || 0;
+        const f = Number(item.failed) || 0;
+        const b = Number(item.broken_flaky) || 0;
+        passed += p;
+        failed += f;
+        broken_flaky += b;
+
+        // const t = item.time_insert ? new Date(item.time_insert).getTime() : 0;
+        // if (t > 0) {
+        //   if (minTime === null || t < minTime) minTime = t;
+        //   if (maxTime === null || t > maxTime) maxTime = t;
+        // }
+
+        const parseDateField = (v) => {
+          if (!v) return null;
+          if (typeof v === "string") return new Date(v);
+          if (typeof v === "number") return new Date(v);
+          if (v.$date) return new Date(v.$date);
+          return null;
+        };
+
+        const parseDateField_2 = (v) => {
+          if (!v) return null;
+
+          if (typeof v === "string") {
+            // clean hidden chars
+            v = v.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+
+            // remove milliseconds (e.g. .192Z → Z)
+            v = v.replace(/\.\d{1,3}Z$/, "Z");
+          }
+
+          if (v.$date) v = v.$date;
+
+          const d = new Date(v);
+          if (isNaN(d.getTime())) {
+            console.warn("Invalid date:", v);
+            return null;
+          }
+
+          const pad = (n) => String(n).padStart(2, "0");
+
+          return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        };
+
+        firstTime = parseDateField_2(item.first_time);
+        latestTime = parseDateField_2(item.latest_time);
+      }
+
+      const totalTest = passed + failed + broken_flaky;
+      const successRate = totalTest ? Math.round((passed / totalTest) * 100) : 0;
+
+      const pad = (n) => String(n).padStart(2, "0");
+      const fmtLocal = (ms) => {
+        const d = new Date(ms);
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      };
+      let timeRange = [];
+      if (firstTime && latestTime) {
+        timeRange = [fmtLocal(firstTime), fmtLocal(latestTime)];
+      } else if (minTime && maxTime) {
+        timeRange = [fmtLocal(minTime), fmtLocal(maxTime)];
+      }
+
+      results.push({
+        name,
+        successRate,
+        failedCount: failed,
+        flakyCount: broken_flaky,
+        timeRange,
+      });
+    }
+
+    res.json(results);
+  });
+
+  router.get("/errors-fails", async (req, res) => {
+    const { from, to } = req.query;
+
+    const toNum = (v) => {
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const ensureArray = (v) => {
+      if (!v) return [];
+      return Array.isArray(v) ? v : [v];
+    };
+    const unique = (arr) => Array.from(new Set(arr.filter((x) => x != null)));
+    const mergeEx = (a, b) => {
+      if (Array.isArray(a) || Array.isArray(b)) return [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])];
+      if (a && b && typeof a === "object" && typeof b === "object") return { ...a, ...b };
+      return a ?? b ?? null;
+    };
+
+    const getLatest = async (col) => {
+      try {
+        const items = await filesRepo.find(col, { page: 1, pageSize: 1 });
+        return items[0] || null;
+      } catch {
+        return null;
+      }
+    };
+
+    const qaErrorDoc = await getLatest("qa-error");
+    const cnErrorDoc = await getLatest("cn-error");
+    const qaFailDoc = await getLatest("qa-fail");
+    const cnFailDoc = await getLatest("cn-fail");
+
+    const totalError = toNum(qaErrorDoc?.totalError) + toNum(cnErrorDoc?.totalError);
+    const totalFail = toNum(qaFailDoc?.totalFail) + toNum(cnFailDoc?.totalFail);
+
+    const rootCauseQa = unique([
+      ...ensureArray(qaErrorDoc?.rootCause),
+      ...ensureArray(qaFailDoc?.rootCause),
+    ]);
+    const rootCauseCn = unique([
+      ...ensureArray(cnErrorDoc?.rootCause),
+      ...ensureArray(cnFailDoc?.rootCause),
+    ]);
+    const exQa = mergeEx(qaErrorDoc?.ex, qaFailDoc?.ex);
+    const exCn = mergeEx(cnErrorDoc?.ex, cnFailDoc?.ex);
+
+    const breakdown = {
+      qaError: toNum(qaErrorDoc?.totalError),
+      cnError: toNum(cnErrorDoc?.totalError),
+      qaFail: toNum(qaFailDoc?.totalFail),
+      cnFail: toNum(cnFailDoc?.totalFail),
+    };
+
+    res.json({ totalError, totalFail, rootCause: { qa: rootCauseQa, cn: rootCauseCn }, ex: { qa: exQa, cn: exCn }, breakdown });
+  });
+
+  router.get("/suites", async (req, res) => {
+    const { from, to, page = 1, pageSize = 20 } = req.query;
+    const suites = await reportsRepo.suites({ from, to, page, pageSize });
+    const items = suites.map((s) => ({
+      id: s.id,
+      name: s.name,
+      status: s.status,
+      startTime: s.startedAt ? new Date(s.startedAt).toLocaleTimeString() : "",
+      duration: `${Math.floor((s.durationMs || 0) / 60000)}m ${Math.floor(((s.durationMs || 0) % 60000) / 1000)}s`,
+      passed: s.passed,
+      failed: s.failed,
+      flaky: s.flaky,
+      percent: s.percent,
+      totalTests: s.totalTests,
+    }));
+    res.json({ items });
+  });
+
+  router.get("/flaky", async (req, res) => {
+    const { from, to, page = 1, pageSize = 20 } = req.query;
+    const items = await reportsRepo.flaky({ from, to, page, pageSize });
+    res.json({ items });
+  });
+
+  return router;
+}
