@@ -4,6 +4,7 @@ import AgentSidebar from '../app/AgentSidebar'
 import Topbar from '../app/Topbar'
 import StatCard from '../features/stats/StatCard'
 import Loading from '../components/Loading'
+import { apiUrl } from '../lib/api'
 
 type Breakdown = { qaError: number; cnError: number; qaFail: number; cnFail: number }
 type RootCauseBySource = { qa: string[]; cn: string[] }
@@ -29,7 +30,7 @@ export default function BugTracker() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch('http://localhost:4000/api/reports/errors-fails')
+        const res = await fetch(apiUrl('/api/reports/errors-fails'))
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const json: ApiResponse = await res.json()
         if (!canceled) setData(json)
@@ -126,4 +127,3 @@ export default function BugTracker() {
     </AppLayout>
   )
 }
-

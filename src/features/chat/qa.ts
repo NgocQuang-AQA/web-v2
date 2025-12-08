@@ -1,4 +1,5 @@
 import { statsToday } from '../../data/mock/stats'
+import { apiUrl } from '../../lib/api'
 
 export type StatMetrics = {
   successRate: number
@@ -21,7 +22,7 @@ export async function fetchStats(params?: { from?: string; to?: string }): Promi
   const qs = new URLSearchParams()
   if (params?.from) qs.set('from', params.from)
   if (params?.to) qs.set('to', params.to)
-  const base = 'http://localhost:4000/api/reports/stats'
+  const base = apiUrl('/api/reports/stats')
   const url = qs.toString() ? `${base}?${qs.toString()}` : base
   const data = await fetchJson<StatMetrics>(url)
   if (data && typeof data.successRate === 'number') return data

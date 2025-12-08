@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import SuiteRow from './SuiteRow'
 import type { TestSuite } from '../../models/types'
 import Loading from '../../components/Loading'
+import { apiUrl } from '../../lib/api'
 
 async function fetchJson<T>(url: string): Promise<T | null> {
   try {
@@ -23,7 +24,7 @@ export default function SuiteList() {
     async function load() {
       setLoading(true)
       setError(null)
-      const data = await fetchJson<{ items: TestSuite[] }>('http://localhost:4000/api/reports/suites')
+      const data = await fetchJson<{ items: TestSuite[] }>(apiUrl('/api/reports/suites'))
       if (!canceled) {
         setItems(data?.items || [])
         setLoading(false)

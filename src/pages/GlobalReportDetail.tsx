@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import AppLayout from '../app/AppLayout'
 import AgentSidebar from '../app/AgentSidebar'
 import Topbar from '../app/Topbar'
+import { apiUrl } from '../lib/api'
 
 type Doc = { id?: string; _id?: string; name?: string; time_insert?: string }
 
@@ -19,7 +20,7 @@ export default function GlobalReportDetail() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch(`http://localhost:4000/api/files/global-qa/${id}`)
+        const res = await fetch(apiUrl(`/api/files/global-qa/${id}`))
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data: Doc = await res.json()
         if (!canceled) setDoc(data)
@@ -41,7 +42,7 @@ export default function GlobalReportDetail() {
     return `${pad(d.getUTCDate())}-${pad(d.getUTCMonth() + 1)}-${d.getUTCFullYear()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
   }
 
-  const src = id ? `http://localhost:4000/api/files/global-qa/${id}/static/index.html` : ''
+  const src = id ? apiUrl(`/api/files/global-qa/${id}/static/index.html`) : ''
 
   return (
     <AppLayout sidebar={<AgentSidebar />}>

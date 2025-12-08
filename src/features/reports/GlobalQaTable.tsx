@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Loading from '../../components/Loading'
+import { apiUrl } from '../../lib/api'
 
 type AnyRecord = Record<string, unknown>
 type FilesResponse = { total: number; items: AnyRecord[] }
@@ -29,7 +30,7 @@ export default function GlobalQaTable() {
       const d = new Date(to)
       if (!Number.isNaN(d.getTime())) params.set('to', d.toISOString())
     }
-    fetch(`http://localhost:4000/api/files/global-qa?${params.toString()}`)
+    fetch(`${apiUrl('/api/files/global-qa')}?${params.toString()}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data: FilesResponse = await res.json()

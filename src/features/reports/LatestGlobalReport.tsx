@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import ProgressBar from '../../components/ProgressBar'
 import Loading from '../../components/Loading'
+import { apiUrl } from '../../lib/api'
 
 type Summary = {
   counts: { passed: number; failed: number; broken: number; skipped: number; unknown: number }
@@ -22,7 +23,7 @@ export default function LatestGlobalReport() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch('http://localhost:4000/api/files/latest-summary')
+        const res = await fetch(apiUrl('/api/files/latest-summary'))
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data: { qa?: { latest: Latest | null; summary: Summary | null }; cn?: { latest: Latest | null; summary: Summary | null } } = await res.json()
         if (!canceled) {

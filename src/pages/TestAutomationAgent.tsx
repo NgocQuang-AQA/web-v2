@@ -7,6 +7,7 @@ import SuiteList from '../features/suites/SuiteList'
 import FlakyAnalysisList from '../features/flaky/FlakyAnalysisList'
 import QuickActionsBar from '../features/actions/QuickActionsBar'
 import ChatDock from '../features/chat/ChatDock'
+import { apiUrl } from '../lib/api'
 import type { StatMetrics } from '../models/types'
 
 async function fetchJson<T>(url: string): Promise<T | null> {
@@ -24,7 +25,7 @@ export default function TestAutomationAgent() {
   useEffect(() => {
     let canceled = false
     async function load() {
-      const data = await fetchJson<StatMetrics>('http://localhost:4000/api/reports/stats')
+      const data = await fetchJson<StatMetrics>(apiUrl('/api/reports/stats'))
       if (!canceled) setStats(data)
     }
     load()

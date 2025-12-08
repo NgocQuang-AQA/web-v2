@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FlakyItem } from '../../models/types'
 import Loading from '../../components/Loading'
+import { apiUrl } from '../../lib/api'
 
 async function fetchJson<T>(url: string): Promise<T | null> {
   try {
@@ -22,7 +23,7 @@ export default function FlakyAnalysisList() {
     async function load() {
       setLoading(true)
       setError(null)
-      const data = await fetchJson<{ items: FlakyItem[] }>('http://localhost:4000/api/reports/flaky')
+      const data = await fetchJson<{ items: FlakyItem[] }>(apiUrl('/api/reports/flaky'))
       if (!canceled) {
         setItems(data?.items || [])
         setLoading(false)

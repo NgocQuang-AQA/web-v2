@@ -8,6 +8,7 @@ import StatCard from '../features/stats/StatCard'
 // import ChatDock from '../features/chat/ChatDock'
 type StatsItem = { name?: string; successRate?: number; failedCount?: number; flakyCount?: number; totalRuntimeMinutes?: number; timeRange?: string[] }
 import LatestGlobalReport from '../features/reports/LatestGlobalReport'
+import { apiUrl } from '../lib/api'
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T | null> {
   try {
@@ -26,7 +27,7 @@ export default function DailyAssistant() {
   useEffect(() => {
     let canceled = false
     async function load() {
-      const data = await fetchJson<unknown>('http://localhost:4000/api/reports/stats')
+      const data = await fetchJson<unknown>(apiUrl('/api/reports/stats'))
       if (!canceled) {
         if (Array.isArray(data)) setStatsList(data as unknown as StatsItem[])
         else if (data && typeof data === 'object') setStatsList([data as unknown as StatsItem])

@@ -1,23 +1,42 @@
-version: "3.9"
 services:
   mongo:
     image: mongo:7
-    restart: unless-stopped
+    container_name: webv2-mongo
     ports:
       - "27017:27017"
     volumes:
-      - ./.docker/mongo:/data/db
+      - mongo_data:/data/db
+
   backend:
-    image: node:20
-    working_dir: /usr/src/app
-    volumes:
-      - ./backend:/usr/src/app
-      - ./tests:/usr/src/app/tests
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: webv2-backend
     environment:
-      - MONGO_URI=mongodb://mongo:27017/sdet
+      - MONGO_URI=mongodb://mongo:27017/webv2
+      - MONGO_DB_NAME=webv2
       - PORT=4000
-    command: sh -c "npm install && npm run dev"
-    ports:
-      - "4000:4000"
+      - DATA_PROVIDER=mongo
+      - SERENITY_HISTORY_DIR=/mnt/d/Project/global-qa/report_history
     depends_on:
       - mongo
+    ports:
+      - "4000:4000"
+    volumes:
+      - /mnt/d/Project/global-qa/report_history:/mnt/d/Project/global-qa/report_history:ro
+      - /mnt/d/Project/global-cn/report_history:/mnt/d/Project/global-cn/report_history:ro
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://backend:4000
+    container_name: webv2-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  mongo_data:
