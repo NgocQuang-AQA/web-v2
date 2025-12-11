@@ -8,6 +8,7 @@ import ReportGenerator from './pages/ReportGenerator.tsx'
 import AgentPlaceholder from './pages/AgentPlaceholder.tsx'
 import GlobalReportDetail from './pages/GlobalReportDetail.tsx'
 import BugTracker from './pages/BugTracker.tsx'
+import HelperVoc from './pages/HelperVoc.tsx'
 
 const router = createBrowserRouter([
   { path: '/', element: <DailyAssistant /> },
@@ -15,6 +16,7 @@ const router = createBrowserRouter([
   { path: '/agents/ta', element: <TestAutomationAgent /> },
   { path: '/agents/bug', element: <BugTracker /> },
   { path: '/agents/report', element: <ReportGenerator /> },
+  { path: '/agents/notes', element: <HelperVoc /> },
   { path: '/reports/global/:id', element: <GlobalReportDetail /> },
   { path: '/agents/:id', element: <AgentPlaceholder /> }
 ])
