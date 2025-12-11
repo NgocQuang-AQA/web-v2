@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=http://backend:4000
+        - VITE_API_URL=http://10.13.60.136:4000
     container_name: webv2-frontend
     depends_on:
       - backend
