@@ -50,10 +50,10 @@ export default function LatestGlobalReport() {
 
   if (loading) return <Loading />
   if (error) return <div className="text-sm text-rose-600">{error}</div>
-  if (!qa && !cn) return <div className="text-sm text-gray-500">Không có dữ liệu</div>
+  if (!qa && !cn) return <div className="text-sm text-gray-500">No data</div>
 
   const renderCard = (pair: { latest: Latest | null; summary: Summary | null } | null, fallbackTitle: string) => {
-    if (!pair || !pair.latest || !pair.summary) return <div className="text-sm text-gray-500">Không có dữ liệu</div>
+    if (!pair || !pair.latest || !pair.summary) return <div className="text-sm text-gray-500">No data</div>
     const t: 'success' | 'warning' | 'danger' = pair.summary.percent >= 95 ? 'success' : pair.summary.percent >= 80 ? 'warning' : 'danger'
     return (
       <div className="rounded-2xl bg-white shadow-soft p-4">

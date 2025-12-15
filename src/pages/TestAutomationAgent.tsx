@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import AppLayout from '../app/AppLayout'
 import AgentSidebar from '../app/AgentSidebar'
-import Topbar from '../app/Topbar'
 import StatCard from '../features/stats/StatCard'
 import SuiteList from '../features/suites/SuiteList'
 import FlakyAnalysisList from '../features/flaky/FlakyAnalysisList'
@@ -37,7 +36,6 @@ export default function TestAutomationAgent() {
   const rt = stats?.timeRange ?? 0
   return (
     <AppLayout sidebar={<AgentSidebar />}>
-      <Topbar />
       <div className="space-y-4">
         <div className="rounded-2xl bg-white shadow-soft p-4">
           <div className="font-semibold mb-2">Test Automation Report</div>

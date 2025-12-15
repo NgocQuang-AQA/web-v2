@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import AppLayout from '../app/AppLayout'
 import AgentSidebar from '../app/AgentSidebar'
-import Topbar from '../app/Topbar'
 import StatCard from '../features/stats/StatCard'
 import Loading from '../components/Loading'
 import { apiUrl } from '../lib/api'
@@ -51,7 +50,7 @@ export default function BugTracker() {
   const exCn = useMemo(() => (data?.ex.cn ? data.ex.cn : {}), [data])
 
   const renderRootList = (roots: string[], exMap: Record<string, unknown>, expanded: Record<string, boolean>, setExpanded: (f: Record<string, boolean>) => void) => {
-    if (!roots.length) return <div className="text-sm text-gray-500">Không có dữ liệu</div>
+    if (!roots.length) return <div className="text-sm text-gray-500">No data</div>
     return (
       <div className="space-y-2">
         {roots.map((r) => {
@@ -62,7 +61,7 @@ export default function BugTracker() {
             <div key={r} className="rounded-xl border border-gray-200 bg-white">
               <button className="w-full flex items-center justify-between px-3 py-2" onClick={() => setExpanded({ ...expanded, [r]: !isOpen })}>
                 <div className="text-sm font-medium text-gray-800">{r}</div>
-                <div className="text-xs text-gray-500">{isOpen ? 'Ẩn' : 'Xem ví dụ'}</div>
+                <div className="text-xs text-gray-500">{isOpen ? 'Hide' : 'View examples'}</div>
               </button>
               {isOpen && (
                 <div className="px-3 pb-3">
@@ -71,10 +70,10 @@ export default function BugTracker() {
                       {items.slice(0, 10).map((x, i) => (
                         <li key={i}>{x}</li>
                       ))}
-                      {items.length > 10 && <li>+{items.length - 10} nữa</li>}
+                      {items.length > 10 && <li>+{items.length - 10} more</li>}
                     </ul>
                   ) : (
-                    <div className="text-sm text-gray-500">Không có ví dụ</div>
+                    <div className="text-sm text-gray-500">No examples</div>
                   )}
                 </div>
               )}
@@ -87,7 +86,6 @@ export default function BugTracker() {
 
   return (
     <AppLayout sidebar={<AgentSidebar />}>
-      <Topbar />
       <div className="space-y-4">
         <div className="rounded-2xl bg-white shadow-soft p-4">
           <div className="font-semibold mb-2">Bug Tracker</div>
@@ -101,7 +99,7 @@ export default function BugTracker() {
               <StatCard label="Total Fail" value={String(data.totalFail)} tone="warning" />
             </div>
           ) : (
-            <div className="text-sm text-gray-500">Không có dữ liệu</div>
+            <div className="text-sm text-gray-500">No data</div>
           )}
           {data && (
             <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">

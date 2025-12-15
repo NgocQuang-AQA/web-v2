@@ -1,35 +1,61 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Loading from '../../components/Loading'
 import { apiUrl } from '../../lib/api'
 
 type AnyRecord = Record<string, unknown>
 type FilesResponse = { total: number; items: AnyRecord[] }
 
+const StopIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z" />
+  </svg>
+)
+const ChevronDownIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+  </svg>
+)
+const ChevronUpIcon = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
+  </svg>
+)
+
 export default function GlobalQaTable() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [items, setItems] = useState<AnyRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const initParams = new URLSearchParams(window.location.search)
+  const initPage = Number(initParams.get('page')) || 1
+  const initPageSize = Number(initParams.get('pageSize')) || 10
+  const initSortBy = (initParams.get('sortBy') as 'name' | 'time_insert') || 'time_insert'
+  const initOrder = (initParams.get('order') as 'asc' | 'desc') || 'desc'
+  const initName = initParams.get('name') || ''
+  const [page, setPage] = useState(initPage)
+  const [pageSize, setPageSize] = useState(initPageSize)
   const [total, setTotal] = useState(0)
-  const [sortBy, setSortBy] = useState<'name' | 'time_insert' | 'size'>('time_insert')
-  const [order, setOrder] = useState<'asc' | 'desc'>('desc')
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
+  const [sortBy, setSortBy] = useState<'name' | 'time_insert'>(initSortBy)
+  const [order, setOrder] = useState<'asc' | 'desc'>(initOrder)
+  const [name, setName] = useState(initName)
+
+  const updateQuery = (patch: Record<string, unknown>) => {
+    const params = new URLSearchParams(location.search)
+    Object.entries(patch).forEach(([k, v]) => {
+      if (v == null || v === '') params.delete(k)
+      else params.set(k, String(v))
+    })
+    const s = params.toString()
+    navigate({ pathname: location.pathname, search: s ? `?${s}` : '' }, { replace: true })
+  }
+
 
   useEffect(() => {
     let canceled = false
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), sortBy, order })
-    if (from) {
-      const d = new Date(from)
-      if (!Number.isNaN(d.getTime())) params.set('from', d.toISOString())
-    }
-    if (to) {
-      const d = new Date(to)
-      if (!Number.isNaN(d.getTime())) params.set('to', d.toISOString())
-    }
+    if (name) params.set('name', name)
     fetch(`${apiUrl('/api/files/global-qa')}?${params.toString()}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -48,12 +74,20 @@ export default function GlobalQaTable() {
     return () => {
       canceled = true
     }
-  }, [page, pageSize, sortBy, order, from, to])
+  }, [page, pageSize, sortBy, order, name])
 
   const displayKeys = (() => {
     const first = items[0] || {}
-    const keys = Object.keys(first).filter((k) => k !== '_id' && k !== 'id' && k !== '__v')
-    const preferred = ['name', 'size', 'status', 'suite', 'time_insert', 'createdAt']
+    const keys = Object.keys(first).filter((k) => {
+      if (k === '_id' || k === 'id' || k === '__v') return false
+      const lower = k.toLowerCase()
+      if (lower === 'size') return false
+      if (lower === 'path') return false
+      if (lower === 'tidate') return false
+      if (k === '_tiDate') return false
+      return true
+    })
+    const preferred = ['name', 'status', 'suite', 'time_insert', 'createdAt']
     const uniq = preferred.filter((k) => keys.includes(k))
     const rest = keys.filter((k) => !uniq.includes(k))
     return [...uniq, ...rest].slice(0, 5)
@@ -96,48 +130,61 @@ export default function GlobalQaTable() {
         <div className="text-sm text-gray-500">No data</div>
       ) : (
         <>
-          <div className="mb-3 flex items-center gap-2">
-            <div className="text-sm text-gray-600">From</div>
-            <input
-              type="datetime-local"
-              className="rounded-xl border border-gray-200 px-2 py-1 text-sm"
-              value={from}
-              onChange={(e) => { setLoading(true); setPage(1); setFrom(e.target.value) }}
-            />
-            <div className="text-sm text-gray-600">To</div>
-            <input
-              type="datetime-local"
-              className="rounded-xl border border-gray-200 px-2 py-1 text-sm"
-              value={to}
-              onChange={(e) => { setLoading(true); setPage(1); setTo(e.target.value) }}
-            />
-            <div className="text-sm text-gray-600">Sort</div>
-            <select
-              className="rounded-xl border border-gray-200 px-2 py-1 text-sm"
-              value={sortBy}
-              onChange={(e) => { setLoading(true); setPage(1); setSortBy(e.target.value as 'name' | 'time_insert' | 'size') }}
-            >
-              <option value="time_insert">time insert</option>
-              <option value="name">name</option>
-              <option value="size">size</option>
-            </select>
-            <select
-              className="rounded-xl border border-gray-200 px-2 py-1 text-sm"
-              value={order}
-              onChange={(e) => { setLoading(true); setPage(1); setOrder(e.target.value as 'asc' | 'desc') }}
-            >
-              <option value="desc">desc</option>
-              <option value="asc">asc</option>
-            </select>
-          </div>
+          <form
+            className="flex items-center gap-3 mb-3"
+            onSubmit={(e) => {
+              e.preventDefault()
+              setLoading(true)
+              setPage(1)
+              updateQuery({ name, page: 1 })
+            }}
+          >
+            <input value={name} onChange={(e) => setName(e.target.value)} className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="Search by Name" />
+            <button className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 text-white text-sm px-3 py-2 shadow-soft hover:bg-indigo-700 active:scale-[0.98] transition" type="submit">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              </svg>
+              <span className="font-medium">Search</span>
+            </button>
+          </form>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-600">
                   <th className="px-3 py-2">#</th>
-                  {displayKeys.map((k) => (
-                    <th key={k} className="px-3 py-2 capitalize">{k.replace('_', ' ')}</th>
-                  ))}
+                  {displayKeys.map((k) => {
+                    const sortable = k === 'time_insert' || k === 'name'
+                    const active = sortable && sortBy === k
+                    const IconEl = active ? (order === 'asc' ? ChevronUpIcon : ChevronDownIcon) : StopIcon
+                    return (
+                      <th
+                        key={k}
+                        className={`px-3 py-2 capitalize ${sortable ? 'cursor-pointer select-none' : ''}`}
+                        onClick={() => {
+                          if (!sortable) return
+                          setLoading(true)
+                          setPage(1)
+                          if (sortBy === k) {
+                            setOrder((o) => {
+                              const no = o === 'asc' ? 'desc' : 'asc'
+                              updateQuery({ sortBy, order: no, page: 1 })
+                              return no as 'asc' | 'desc'
+                            })
+                          } else {
+                            const nb = k as 'name' | 'time_insert'
+                            setSortBy(nb)
+                            setOrder('asc')
+                            updateQuery({ sortBy: nb, order: 'asc', page: 1 })
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>{k.replace('_', ' ')}</span>
+                          {sortable && <IconEl className={`size-4 ${active ? 'text-indigo-600' : 'text-gray-400'}`} />}
+                        </div>
+                      </th>
+                    )
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -174,6 +221,7 @@ export default function GlobalQaTable() {
                   setLoading(true)
                   setPage(1)
                   setPageSize(sz)
+                  updateQuery({ pageSize: sz, page: 1 })
                 }}
               >
                 <option value={5}>5</option>
@@ -188,7 +236,9 @@ export default function GlobalQaTable() {
                 onClick={() => {
                   if (page > 1) {
                     setLoading(true)
-                    setPage(page - 1)
+                    const np = page - 1
+                    setPage(np)
+                    updateQuery({ page: np })
                   }
                 }}
               >
@@ -200,7 +250,9 @@ export default function GlobalQaTable() {
                 onClick={() => {
                   if (page < pageCount) {
                     setLoading(true)
-                    setPage(page + 1)
+                    const np = page + 1
+                    setPage(np)
+                    updateQuery({ page: np })
                   }
                 }}
               >

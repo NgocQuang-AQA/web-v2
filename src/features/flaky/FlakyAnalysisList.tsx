@@ -27,7 +27,7 @@ export default function FlakyAnalysisList() {
       if (!canceled) {
         setItems(data?.items || [])
         setLoading(false)
-        if (!data) setError('Không thể tải dữ liệu')
+        if (!data) setError('Failed to load data')
       }
     }
     load()
@@ -52,7 +52,7 @@ export default function FlakyAnalysisList() {
               <div className="text-gray-700">{(f.trendMs/1000).toFixed(1)}s</div>
             </div>
           ))}
-          {items.length === 0 && <div className="text-sm text-gray-500">Không có dữ liệu</div>}
+          {items.length === 0 && <div className="text-sm text-gray-500">No data</div>}
         </div>
       )}
     </div>

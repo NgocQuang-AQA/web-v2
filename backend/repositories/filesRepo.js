@@ -11,13 +11,17 @@ class FilesRepoMongo {
     return this.conn().db.collection(name);
   }
   async count(collection, filter = {}) {
-    const { from, to } = filter || {};
-    if (!from && !to) {
+    const { from, to, name } = filter || {};
+    if (!from && !to && !name) {
+      if (name) {
+        return this.col(collection).countDocuments({ name: { $regex: String(name), $options: "i" } });
+      }
       return this.col(collection).countDocuments({});
     }
     const match = {};
     if (from) match._tiDate = { ...(match._tiDate || {}), $gte: new Date(from) };
     if (to) match._tiDate = { ...(match._tiDate || {}), $lte: new Date(to) };
+    if (name) match.name = { $regex: String(name), $options: "i" };
     const pipeline = [
       {
         $addFields: {
@@ -32,11 +36,12 @@ class FilesRepoMongo {
     const arr = await this.col(collection).aggregate(pipeline).toArray();
     return arr[0]?.n || 0;
   }
-  async find(collection, { page = 1, pageSize = 20, from, to, sortBy = "time_insert", order = "desc" } = {}) {
+  async find(collection, { page = 1, pageSize = 20, from, to, sortBy = "time_insert", order = "desc", name } = {}) {
     const dir = String(order).toLowerCase() === "asc" ? 1 : -1;
     const match = {};
     if (from) match._tiDate = { ...(match._tiDate || {}), $gte: new Date(from) };
     if (to) match._tiDate = { ...(match._tiDate || {}), $lte: new Date(to) };
+    if (name) match.name = { $regex: String(name), $options: "i" };
     const sort = (() => {
       if (String(sortBy) === "name") return { name: dir };
       if (String(sortBy) === "size") return { _sizeNum: dir };

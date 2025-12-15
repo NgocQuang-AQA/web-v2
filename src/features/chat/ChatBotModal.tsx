@@ -48,7 +48,7 @@ export default function ChatBotModal({ open, initialQuestion, onClose }: Props) 
           </div>
         ))}
         {!ready && (
-          <div className="text-sm text-gray-500">Nhập câu hỏi để bắt đầu.</div>
+          <div className="text-sm text-gray-500">Enter a question to start.</div>
         )}
         <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
           <input
@@ -56,9 +56,9 @@ export default function ChatBotModal({ open, initialQuestion, onClose }: Props) 
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') send() }}
             className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Đặt câu hỏi về số liệu test..."
+            placeholder="Ask about test metrics..."
           />
-          <button className="rounded-xl bg-indigo-600 text-white text-sm px-3 py-2" onClick={send}>Gửi</button>
+          <button className="rounded-xl bg-indigo-600 text-white text-sm px-3 py-2" onClick={send}>Send</button>
         </div>
       </div>
     </Modal>

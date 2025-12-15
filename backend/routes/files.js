@@ -24,10 +24,31 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
   });
 
   router.get('/:collection', async (req, res) => {
-    const { page = 1, pageSize = 20, from, to, sortBy = 'time_insert', order = 'desc' } = req.query;
+    const { page = 1, pageSize = 20, sortBy = 'time_insert', order = 'desc', name = '' } = req.query;
+    // Support multiple param formats:
+    // - Legacy: from/to (ISO)
+    // - Alias: startTime/endTime (ISO)
+    // - New: timeStart/timeEnd (dd-mm-yyyy, local date)
+    const parseDMY = (s) => {
+      if (!s || typeof s !== 'string') return null;
+      const parts = s.split('-');
+      if (parts.length !== 3) return null;
+      const [dd, mm, yyyy] = parts.map((x) => Number(x));
+      if (!dd || !mm || !yyyy) return null;
+      const start = new Date(Date.UTC(yyyy, mm - 1, dd, 0, 0, 0, 0));
+      if (Number.isNaN(start.getTime())) return null;
+      return start;
+    };
+    const startD = parseDMY(req.query.timeStart);
+    const endD = parseDMY(req.query.timeEnd);
+    const endOfDay = (d) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
+    const fromDMY = startD ? startD.toISOString() : '';
+    const toDMY = endD ? endOfDay(endD).toISOString() : '';
+    const from = req.query.from || req.query.startTime || fromDMY || '';
+    const to = req.query.to || req.query.endTime || toDMY || '';
     const collection = req.params.collection;
-    const options = { page, pageSize, from, to, sortBy, order };
-    const total = await filesRepo.count(collection, { from, to });
+    const options = { page, pageSize, from, to, sortBy, order, name };
+    const total = await filesRepo.count(collection, { from, to, name });
     const items = await filesRepo.find(collection, options);
     res.json({ total, items });
   });

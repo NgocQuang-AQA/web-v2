@@ -1,7 +1,6 @@
 import './App.css'
 import AppLayout from './app/AppLayout'
 import AgentSidebar from './app/AgentSidebar'
-import Topbar from './app/Topbar'
 import SuiteList from './features/suites/SuiteList'
 import FlakyAnalysisList from './features/flaky/FlakyAnalysisList'
 import QuickActionsBar from './features/actions/QuickActionsBar'
@@ -36,7 +35,7 @@ function App() {
 
   return (
     <AppLayout sidebar={<AgentSidebar />}>
-      <Topbar />
+      {/* <Topbar /> */}
       <div className="space-y-4">
         {stats.map((s, idx) => (
           <div key={idx} className="rounded-2xl bg-white shadow-soft p-4">

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import AppLayout from '../app/AppLayout'
 import AgentSidebar from '../app/AgentSidebar'
-import Topbar from '../app/Topbar'
 import StatCard from '../features/stats/StatCard'
 // import FlakyAnalysisList from '../features/flaky/FlakyAnalysisList'
 // import QuickActionsBar from '../features/actions/QuickActionsBar'
@@ -41,7 +40,6 @@ export default function DailyAssistant() {
 
   return (
     <AppLayout sidebar={<AgentSidebar />}>
-      <Topbar />
       <div className="space-y-4">
         {statsList.map((s, idx) => {
           const sr = s.successRate ?? 0
@@ -56,11 +54,11 @@ export default function DailyAssistant() {
                 <StatCard label="Flaky Tests" value={`${fl}`} tone="warning" />
               </div>
               {Array.isArray(s.timeRange) && s.timeRange.length === 2 && (
-                <div className="mt-2 text-xs text-gray-500">Thời gian: {s.timeRange[0]} → {s.timeRange[1]}</div>
+                <div className="mt-2 text-xs text-gray-500">Time: {s.timeRange[0]} → {s.timeRange[1]}</div>
               )}
               {/* <div className="mt-3 flex items-center gap-2">
-                <button className="rounded-xl bg-indigo-600 text-white text-sm px-3 py-2" onClick={() => {}} disabled={statsList.length === 0}>Đồng bộ Serenity</button>
-                {statsList.length === 0 && <span className="text-sm text-gray-500">Đang tải số liệu...</span>}
+                <button className="rounded-xl bg-indigo-600 text-white text-sm px-3 py-2" onClick={() => {}} disabled={statsList.length === 0}>Sync Serenity</button>
+                {statsList.length === 0 && <span className="text-sm text-gray-500">Loading metrics...</span>}
               </div> */}
             </div>
           )

@@ -16,7 +16,7 @@ export default function Modal({ open, title, onClose, children }: Props) {
         <div className="w-full max-w-2xl rounded-2xl bg-white shadow-soft">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <div className="text-sm font-semibold">{title || 'Dialog'}</div>
-            <button className="text-sm text-gray-700 rounded-xl px-3 py-1 hover:bg-gray-100" onClick={onClose}>Đóng</button>
+            <button className="text-sm text-gray-700 rounded-xl px-3 py-1 hover:bg-gray-100" onClick={onClose}>Close</button>
           </div>
           <div className="p-4">{children}</div>
         </div>

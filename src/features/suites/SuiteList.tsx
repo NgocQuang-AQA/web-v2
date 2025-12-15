@@ -28,7 +28,7 @@ export default function SuiteList() {
       if (!canceled) {
         setItems(data?.items || [])
         setLoading(false)
-        if (!data) setError('Không thể tải dữ liệu')
+        if (!data) setError('Failed to load data')
       }
     }
     load()
@@ -41,7 +41,7 @@ export default function SuiteList() {
   return (
     <div className="space-y-3">
       {items.map(s => <SuiteRow key={s.id} suite={s} />)}
-      {items.length === 0 && <div className="text-sm text-gray-500">Không có dữ liệu</div>}
+      {items.length === 0 && <div className="text-sm text-gray-500">No data</div>}
     </div>
   )
 }

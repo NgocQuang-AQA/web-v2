@@ -36,7 +36,7 @@ function fmtPercent(n: number) {
 
 function fmtMinutes(n: number) {
   const m = Math.max(0, Math.floor(n))
-  return `${m} phút`
+  return `${m} minutes`
 }
 
 function startOfWeekISO(d: Date) {
@@ -58,23 +58,23 @@ function hasAny(str: string, kws: string[]) {
 
 export async function answerQuestion(q: string): Promise<string> {
   const lower = q.toLowerCase()
-  if (hasAny(lower, ['tỉ lệ', 'ty le', 'tỷ lệ', 'pass', 'thành công'])) {
+  if (hasAny(lower, ['tỉ lệ', 'ty le', 'tỷ lệ', 'pass', 'thành công', 'success rate'])) {
     const stats = await fetchStats()
-    return `Tỉ lệ pass hiện tại: ${fmtPercent(stats.successRate)}.`
+    return `Current pass rate: ${fmtPercent(stats.successRate)}.`
   }
   if (hasAny(lower, ['fail', 'thất bại', 'failed'])) {
     const stats = await fetchStats()
-    return `Số lượng test thất bại: ${stats.failedCount}.`
+    return `Failed tests: ${stats.failedCount}.`
   }
   if (hasAny(lower, ['flaky'])) {
     const stats = await fetchStats()
-    return `Số lượng flaky tests: ${stats.flakyCount}.`
+    return `Flaky tests: ${stats.flakyCount}.`
   }
-  if (hasAny(lower, ['thời gian', 'runtime', 'chạy mất'])) {
+  if (hasAny(lower, ['thời gian', 'runtime', 'chạy mất', 'duration'])) {
     const stats = await fetchStats()
-    return `Tổng thời gian chạy: ${fmtMinutes(stats.totalRuntimeMinutes)}.`
+    return `Total runtime: ${fmtMinutes(stats.totalRuntimeMinutes)}.`
   }
-  if (hasAny(lower, ['tuần này', 'trong tuần', 'cải thiện', 'so với tuần trước'])) {
+  if (hasAny(lower, ['tuần này', 'trong tuần', 'cải thiện', 'so với tuần trước', 'this week', 'last week'])) {
     const now = new Date()
     const startThisWeek = startOfWeekISO(now)
     const startLastWeek = new Date(startThisWeek)
@@ -84,9 +84,9 @@ export async function answerQuestion(q: string): Promise<string> {
     const thisWeek = await fetchStats({ from: toIso(startThisWeek), to: toIso(now) })
     const lastWeek = await fetchStats({ from: toIso(startLastWeek), to: toIso(endLastWeek) })
     const diff = Math.round((thisWeek.successRate - lastWeek.successRate) * 100) / 100
-    const trend = diff > 0 ? 'tăng' : diff < 0 ? 'giảm' : 'không đổi'
+    const trend = diff > 0 ? 'increase' : diff < 0 ? 'decrease' : 'no change'
     const abs = Math.abs(diff)
-    return `Tỉ lệ pass tuần này: ${fmtPercent(thisWeek.successRate)}; tuần trước: ${fmtPercent(lastWeek.successRate)}. Xu hướng: ${trend} ${abs}%.`
+    return `Pass rate this week: ${fmtPercent(thisWeek.successRate)}; last week: ${fmtPercent(lastWeek.successRate)}. Trend: ${trend} ${abs}%.`
   }
-  return 'Hiện tại chatbot hỗ trợ các câu hỏi về số liệu test: tỉ lệ pass, số test fail, số flaky, thời gian chạy, xu hướng theo tuần. Vui lòng thử lại với câu hỏi liên quan.'
+  return 'The chatbot supports questions about test metrics: pass rate, failed tests, flaky tests, total runtime, and weekly trends. Please try asking a related question.'
 }

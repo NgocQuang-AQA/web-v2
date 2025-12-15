@@ -18,12 +18,12 @@ export default function Topbar() {
       <div className="flex-1" />
       <input
         className="w-full lg:w-1/2 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        placeholder="Tìm kiếm"
+        placeholder="Search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter') onSubmit() }}
       />
-      <button className="rounded-xl bg-indigo-600 text-white text-sm px-3 py-2" onClick={onSubmit}>Hỏi</button>
+      <button className="rounded-xl bg-indigo-600 text-white text-sm px-3 py-2" onClick={onSubmit}>Ask</button>
       <ChatBotModal open={open} initialQuestion={query} onClose={() => setOpen(false)} />
     </div>
   )

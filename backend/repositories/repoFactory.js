@@ -270,10 +270,11 @@ class FilesRepoMemory {
     return this.store.get(collection);
   }
   async count(collection, filter = {}) {
-    const { from, to } = filter || {};
-    if (!from && !to) return this.list(collection).length;
+    const { from, to, name } = filter || {};
+    if (!from && !to && !name) return this.list(collection).length;
     const fromD = from ? new Date(from) : null;
     const toD = to ? new Date(to) : null;
+    const nameLower = typeof name === "string" && name ? String(name).toLowerCase() : "";
     const getMs = (v) => {
       if (v == null) return null;
       if (typeof v === "number") return v;
@@ -284,16 +285,21 @@ class FilesRepoMemory {
     };
     return this.list(collection).filter((i) => {
       const ms = getMs(i.time_insert);
-      if (ms == null) return false;
+      if (ms == null && (fromD || toD)) return false;
       if (fromD && ms < fromD.getTime()) return false;
       if (toD && ms > toD.getTime()) return false;
+      if (nameLower) {
+        const n = String(i.name || "").toLowerCase();
+        if (!n.includes(nameLower)) return false;
+      }
       return true;
     }).length;
   }
-  async find(collection, { page = 1, pageSize = 20, from, to, sortBy = "time_insert", order = "desc" } = {}) {
+  async find(collection, { page = 1, pageSize = 20, from, to, sortBy = "time_insert", order = "desc", name } = {}) {
     const fromD = from ? new Date(from) : null;
     const toD = to ? new Date(to) : null;
     const dir = String(order).toLowerCase() === "asc" ? 1 : -1;
+    const nameLower = typeof name === "string" && name ? String(name).toLowerCase() : "";
     const getMs = (v) => {
       if (v == null) return null;
       if (typeof v === "number") return v;
@@ -310,10 +316,14 @@ class FilesRepoMemory {
     };
     const list = this.list(collection).slice().filter((i) => {
       const ms = getMs(i.time_insert);
-      if (!fromD && !toD) return true;
-      if (ms == null) return false;
+      if (!fromD && !toD && !nameLower) return true;
+      if (ms == null && (fromD || toD)) return false;
       if (fromD && ms < fromD.getTime()) return false;
       if (toD && ms > toD.getTime()) return false;
+      if (nameLower) {
+        const n = String(i.name || "").toLowerCase();
+        if (!n.includes(nameLower)) return false;
+      }
       return true;
     });
     const all = list.sort((a, b) => {

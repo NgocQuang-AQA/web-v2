@@ -18,7 +18,7 @@ export default function AgentSidebar() {
     <div className="bg-white rounded-2xl shadow-soft p-4 h-full">
       <div className="flex items-center justify-between mb-3">
         <div className="text-lg font-semibold">Report Preview</div>
-        <div className="text-sm bg-indigo-50 text-indigo-600 rounded-lg px-2 py-1">7</div>
+        {/* <div className="text-sm bg-indigo-50 text-indigo-600 rounded-lg px-2 py-1">7</div> */}
       </div>
       <div className="space-y-3">
         {agents.map(a => {

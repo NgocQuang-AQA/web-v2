@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import AppLayout from '../app/AppLayout'
 import AgentSidebar from '../app/AgentSidebar'
-import Topbar from '../app/Topbar'
 import { apiUrl } from '../lib/api'
+import Loading from '../components/Loading'
 
 type Doc = { id?: string; _id?: string; name?: string; time_insert?: string }
 
@@ -46,14 +46,13 @@ export default function GlobalReportDetail() {
 
   return (
     <AppLayout sidebar={<AgentSidebar />}>
-      <Topbar />
       <div className="space-y-4">
         <div className="rounded-2xl bg-white shadow-soft p-4">
           <div className="flex items-center justify-between">
             <div className="font-semibold">{doc?.name || 'Global QA Report'}</div>
             <div className="text-xs text-gray-500">{fmtTime(doc?.time_insert)}</div>
           </div>
-          {loading && <div className="text-sm text-gray-500 mt-2">Loading...</div>}
+          {loading && <Loading />}
           {error && <div className="text-sm text-rose-600 mt-2">{error}</div>}
         </div>
         <div className="rounded-2xl bg-white shadow-soft p-4">
