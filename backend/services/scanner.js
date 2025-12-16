@@ -3,6 +3,8 @@ import path from "node:path";
 let reportsRepoRef;
 
 const reportsDir = path.resolve(process.cwd(), "tests", "reports");
+const isDebug = String(process.env.FILES_DEBUG || "").toLowerCase() === "1" || String(process.env.FILES_DEBUG || "").toLowerCase() === "true";
+const dlog = (...args) => { if (isDebug) console.log("[scanner]", ...args); };
 
 function ensureArray(x) {
   if (!x) return [];
@@ -222,12 +224,19 @@ async function scanSerenityLatest(testRunId, rootDirOverride) {
 
 async function summarizeDir(dir) {
   try {
+    dlog("summarizeDir", { dir });
     const files = await walk(dir);
-    const targets = files.filter((f) => f.endsWith(".json") && !["bootstrap-icons.json", "nivoslider.jquery.json", "serenity.configuration.json"].includes(path.basename(f)));
+    const targets = files.filter((f) => (f.endsWith(".json") || f.endsWith(".js")) && !["bootstrap-icons.json", "nivoslider.jquery.json", "serenity.configuration.json"].includes(path.basename(f)));
     const counts = { passed: 0, failed: 0, broken: 0, skipped: 0, unknown: 0 };
     const byKey = new Map();
     let total = 0;
     let indexHtmlText = null;
+    try {
+      const ih = path.join(dir, "index.html");
+      indexHtmlText = await fs.readFile(ih, "utf8");
+      dlog("indexHtml", { path: ih, loaded: !!indexHtmlText });
+    } catch {}
+    dlog("targets", { n: targets.length });
     for (const f of targets) {
       let text;
       try {
@@ -237,7 +246,7 @@ async function summarizeDir(dir) {
       }
 
       let data = null;
-      if (f.endsWith(".json")) {
+      if (f.endsWith(".json") || f.endsWith(".js")) {
         data = tryParseJson(text);
       }
       if (!data) continue;
@@ -347,8 +356,10 @@ async function summarizeDir(dir) {
       }
     }
     const percent = total ? Math.round((counts.passed / total) * 100) : 0;
+    dlog("summary", { counts, total, percent });
     return { counts, total, percent };
   } catch (err) {
+    dlog("summary-error", String(err));
     return { error: String(err) };
   }
 }

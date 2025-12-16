@@ -138,6 +138,18 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
     res.json(doc);
   });
 
+  router.get('/:collection/:id/latest-summary', async (req, res) => {
+    const { collection, id } = req.params;
+    const doc = await filesRepo.findById(collection, id);
+    if (!doc) return res.status(404).json({ message: 'not_found' });
+    const rawDir = doc.path || doc.dir || doc.location || '';
+    dlog("id-latest-summary", { collection, id, rawDir });
+    const dir = await pickExistingDir(collection, rawDir);
+    if (!dir) return res.json({ latest: doc, summary: null });
+    const summary = summarizeDir ? await summarizeDir(dir) : null;
+    res.json({ latest: doc, summary });
+  });
+
   router.get('/:collection/:id/static/*', async (req, res) => {
     const { collection, id } = req.params;
     const doc = await filesRepo.findById(collection, id);
