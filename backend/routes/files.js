@@ -5,6 +5,9 @@ import fs from "node:fs";
 export function createFilesRouter({ filesRepo, summarizeDir }) {
   const router = Router();
 
+  const isDebug = String(process.env.FILES_DEBUG || "").toLowerCase() === "1" || String(process.env.FILES_DEBUG || "").toLowerCase() === "true";
+  const dlog = (...args) => { if (isDebug) console.log("[files]", ...args); };
+
   function toPosix(p) {
     if (!p) return "";
     return String(p).replace(/\\/g, "/");
@@ -53,9 +56,12 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
     if (wsl && wsl !== posix) candidates.push(wsl);
     const mapped = resolveDirForCollection(collection, posix);
     if (mapped && !candidates.includes(mapped)) candidates.push(mapped);
+    dlog("pickExistingDir", { collection, rawDir: posix, candidates });
     for (const d of candidates) {
       try {
-        if (fs.existsSync(d)) return d;
+        const ok = fs.existsSync(d);
+        dlog("exists", d, ok);
+        if (ok) return d;
       } catch {}
     }
     return posix;
@@ -73,6 +79,7 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
       let summary = null;
       if (latest) {
         const rawDir = latest.path || latest.dir || latest.location || '';
+        dlog("latest-summary", { collection: col, latest: latest?.id, rawDir });
         const dir = await pickExistingDir(col, rawDir);
         if (dir) summary = summarizeDir ? await summarizeDir(dir) : null;
       }
@@ -117,6 +124,7 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
     const latest = items[0] || null;
     if (!latest) return res.json({ latest: null, summary: null });
     const rawDir = latest.path || latest.dir || latest.location || '';
+    dlog("collection-latest-summary", { collection, latest: latest?.id, rawDir });
     const dir = await pickExistingDir(collection, rawDir);
     if (!dir) return res.json({ latest, summary: null });
     const summary = summarizeDir ? await summarizeDir(dir) : null;
@@ -135,6 +143,7 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
     const doc = await filesRepo.findById(collection, id);
     if (!doc) return res.status(404).json({ message: 'not_found' });
     const rawDir = doc.path || doc.dir || doc.location || '';
+    dlog("static", { collection, id, rawDir });
     const dir = await pickExistingDir(collection, rawDir);
     if (!dir) return res.status(404).json({ message: 'dir_not_found' });
     const subPath = req.params[0] || 'index.html';
@@ -143,18 +152,28 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
     if (altDir1 && !tryDirs.includes(altDir1)) tryDirs.push(altDir1);
     const altDir2 = fromWindowsToWsl(rawDir);
     if (altDir2 && !tryDirs.includes(altDir2)) tryDirs.push(altDir2);
+    dlog("static-try", { subPath, tryDirs });
     for (const base of tryDirs) {
       try {
         const fullPath = path.resolve(base, subPath);
         const rel = path.relative(base, fullPath);
-        if (rel.startsWith('..')) continue;
-        if (fs.existsSync(fullPath)) {
+        if (rel.startsWith('..')) {
+          dlog("skip-rel", { base, fullPath, rel });
+          continue;
+        }
+        const ok = fs.existsSync(fullPath);
+        dlog("probe-file", { base, fullPath, ok });
+        if (ok) {
           return res.sendFile(fullPath, (err) => {
-            if (err) return res.status(err.statusCode || 500).json({ message: 'file_error' });
+            if (err) {
+              dlog("sendFile-error", { fullPath, err: String(err) });
+              return res.status(err.statusCode || 500).json({ message: 'file_error' });
+            }
           });
         }
       } catch {}
     }
+    dlog("not-found", { id, subPath, tried: tryDirs });
     return res.status(404).json({ message: 'file_error' });
   });
 
