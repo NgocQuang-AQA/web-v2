@@ -1,8 +1,65 @@
 import { Router } from "express";
 import path from "node:path";
+import fs from "node:fs";
 
 export function createFilesRouter({ filesRepo, summarizeDir }) {
   const router = Router();
+
+  function toPosix(p) {
+    if (!p) return "";
+    return String(p).replace(/\\/g, "/");
+  }
+
+  function fromWindowsToWsl(p) {
+    const s = toPosix(p);
+    const m = s.match(/^([A-Za-z]):\/(.*)$/);
+    if (!m) return s;
+    const drive = m[1].toLowerCase();
+    return `/mnt/${drive}/${m[2]}`;
+  }
+
+  function replacePrefix(s, fromPrefix, toPrefix) {
+    const src = toPosix(s);
+    const from = toPosix(fromPrefix);
+    const to = toPosix(toPrefix);
+    if (src.startsWith(from)) {
+      const rest = src.slice(from.length);
+      return to + rest;
+    }
+    return src;
+  }
+
+  function resolveDirForCollection(collection, rawDir) {
+    let dir = toPosix(rawDir || "");
+    if (!dir) return "";
+    dir = fromWindowsToWsl(dir);
+    const qaRootEnv = toPosix(process.env.SERENITY_HISTORY_DIR || "");
+    const cnRootEnv = toPosix(process.env.SERENITY_HISTORY_DIR_CN || (qaRootEnv ? qaRootEnv.replace("global-qa", "global-cn") : ""));
+    if (collection === "global-qa" || collection === "qa" || collection.includes("qa")) {
+      if (qaRootEnv) dir = replacePrefix(dir, "/data/global-qa/report_history", qaRootEnv);
+      else dir = replacePrefix(dir, "/data/global-qa/report_history", "/mnt/d/Project/global-qa/report_history");
+    } else if (collection === "global-cn" || collection === "cn" || collection.includes("cn")) {
+      const cnFallback = "/mnt/d/Project/global-cn/report_history";
+      dir = replacePrefix(dir, "/data/global-cn/report_history", cnRootEnv || cnFallback);
+    }
+    return dir;
+  }
+
+  async function pickExistingDir(collection, rawDir) {
+    const candidates = [];
+    const posix = toPosix(rawDir);
+    if (posix) candidates.push(posix);
+    const wsl = fromWindowsToWsl(posix);
+    if (wsl && wsl !== posix) candidates.push(wsl);
+    const mapped = resolveDirForCollection(collection, posix);
+    if (mapped && !candidates.includes(mapped)) candidates.push(mapped);
+    for (const d of candidates) {
+      try {
+        if (fs.existsSync(d)) return d;
+      } catch {}
+    }
+    return posix;
+  }
 
   router.get('/latest-summary', async (req, res) => {
     const collections = [
@@ -15,7 +72,8 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
       const latest = items[0] || null;
       let summary = null;
       if (latest) {
-        const dir = latest.path || latest.dir || latest.location || '';
+        const rawDir = latest.path || latest.dir || latest.location || '';
+        const dir = await pickExistingDir(col, rawDir);
         if (dir) summary = summarizeDir ? await summarizeDir(dir) : null;
       }
       result[key] = { latest, summary };
@@ -58,7 +116,8 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
     const items = await filesRepo.find(collection, { page: 1, pageSize: 1 });
     const latest = items[0] || null;
     if (!latest) return res.json({ latest: null, summary: null });
-    const dir = latest.path || latest.dir || latest.location || '';
+    const rawDir = latest.path || latest.dir || latest.location || '';
+    const dir = await pickExistingDir(collection, rawDir);
     if (!dir) return res.json({ latest, summary: null });
     const summary = summarizeDir ? await summarizeDir(dir) : null;
     res.json({ latest, summary });
@@ -75,15 +134,28 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
     const { collection, id } = req.params;
     const doc = await filesRepo.findById(collection, id);
     if (!doc) return res.status(404).json({ message: 'not_found' });
-    const dir = doc.path || doc.dir || doc.location || '';
+    const rawDir = doc.path || doc.dir || doc.location || '';
+    const dir = await pickExistingDir(collection, rawDir);
     if (!dir) return res.status(404).json({ message: 'dir_not_found' });
     const subPath = req.params[0] || 'index.html';
-    const fullPath = path.resolve(dir, subPath);
-    const rel = path.relative(dir, fullPath);
-    if (rel.startsWith('..')) return res.status(403).json({ message: 'forbidden' });
-    res.sendFile(fullPath, (err) => {
-      if (err) return res.status(err.statusCode || 500).json({ message: 'file_error' });
-    });
+    const tryDirs = [dir];
+    const altDir1 = resolveDirForCollection(collection, rawDir);
+    if (altDir1 && !tryDirs.includes(altDir1)) tryDirs.push(altDir1);
+    const altDir2 = fromWindowsToWsl(rawDir);
+    if (altDir2 && !tryDirs.includes(altDir2)) tryDirs.push(altDir2);
+    for (const base of tryDirs) {
+      try {
+        const fullPath = path.resolve(base, subPath);
+        const rel = path.relative(base, fullPath);
+        if (rel.startsWith('..')) continue;
+        if (fs.existsSync(fullPath)) {
+          return res.sendFile(fullPath, (err) => {
+            if (err) return res.status(err.statusCode || 500).json({ message: 'file_error' });
+          });
+        }
+      } catch {}
+    }
+    return res.status(404).json({ message: 'file_error' });
   });
 
   return router;

@@ -2,12 +2,16 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import dotenv from "dotenv";
+import path from "node:path";
 import { createRepos } from "./repositories/repoFactory.js";
 import { createReportsRouter } from "./routes/reports.js";
 import { createScanner } from "./services/scanner.js";
 import { createFilesRouter } from "./routes/files.js";
+import { createChatRouter } from "./routes/chat.js";
 
 dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
+dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
 
 const app = express();
 
@@ -27,6 +31,7 @@ app.get("/health", (req, res) => {
 
 app.use("/api/reports", createReportsRouter({ reportsRepo, testRunsRepo, filesRepo, scanReports, scanSerenityLatest }));
 app.use("/api/files", createFilesRouter({ filesRepo, summarizeDir }));
+app.use("/api/chat", createChatRouter({ filesRepo, reportsRepo }));
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
