@@ -47,6 +47,7 @@ export default function HelperVoc() {
   const [from, setFrom] = useState(initFrom)
   const [submittedFrom, setSubmittedFrom] = useState('')
   const [searchEpoch, setSearchEpoch] = useState(0)
+  const [noticeHiding, setNoticeHiding] = useState(false)
 
   const base = envBase[env]
 
@@ -329,7 +330,11 @@ export default function HelperVoc() {
     try {
       setNoticeMsg(`Copied '${text}' !`)
       setNoticeOpen(true)
-      setTimeout(() => setNoticeOpen(false), 3000)
+      setNoticeHiding(false)
+      setTimeout(() => {
+        setNoticeHiding(true)
+        setTimeout(() => setNoticeOpen(false), 1000)
+      }, 3000)
     } catch {
       // ignore
     }
@@ -337,6 +342,11 @@ export default function HelperVoc() {
 
   return (
     <AppLayout sidebar={<AgentSidebar />}>
+      {noticeOpen && noticeMsg && (
+        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none shadow-lg alert alert-success ${noticeHiding ? 'alert-hide' : ''}`} role="alert">
+          {noticeMsg}
+        </div>
+      )}
       <div className="space-y-4">
         <div className="rounded-2xl bg-white shadow-soft p-4">
           <div className="flex items-center gap-4 border-b border-gray-100 mb-3">
@@ -414,11 +424,6 @@ export default function HelperVoc() {
       <Modal open={alertOpen} onClose={() => setAlertOpen(false)} title="Notice Alert">
         <div className="rounded-xl bg-amber-50 text-amber-800 p-3 text-sm">
           {alertMsg || 'An error occurred.'}
-        </div>
-      </Modal>
-      <Modal open={noticeOpen} onClose={() => setNoticeOpen(false)} title="Notice Copy Alert">
-        <div className="rounded-xl bg-amber-50 text-amber-800 p-3 text-sm">
-          {noticeMsg || 'An error occurred.'}
         </div>
       </Modal>
     </AppLayout>
