@@ -9,9 +9,13 @@ import { createScanner } from "./services/scanner.js";
 import { createFilesRouter } from "./routes/files.js";
 import { createChatRouter } from "./routes/chat.js";
 
-dotenv.config();
-dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
+const envCandidates = [
+  path.resolve(process.cwd(), ".env"),
+  process.platform === "win32" ? path.resolve(process.cwd(), ".env.windows") : undefined,
+  process.platform === "darwin" ? path.resolve(process.cwd(), ".env.macos") : undefined,
+  path.resolve(process.cwd(), "../.env"),
+].filter(Boolean);
+for (const p of envCandidates) dotenv.config({ path: p });
 
 const app = express();
 
