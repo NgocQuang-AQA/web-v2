@@ -37,8 +37,8 @@ VITE_API_URL=http://localhost:4000 npm run dev
 - Build FE trỏ tới backend qua domain/IP và chạy stack:
 
 ```bash
-docker-compose build --build-arg VITE_API_URL=http://10.13.60.136:4000 frontend && docker-compose up -d
+docker compose build --build-arg VITE_API_URL=http://10.13.60.136:4000 frontend && docker compose up -d
 ```
 
 - Truy cập: Frontend `http://10.13.60.136:5173`, Backend health `http://10.13.60.136:4000/health`.
-- Dừng dịch vụ: `docker-compose down`.
+- Dừng dịch vụ: `docker compose down`.
