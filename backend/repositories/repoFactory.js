@@ -366,7 +366,9 @@ export async function createRepos({ provider = "auto", mongoUri, dbName }) {
           provider: "mongo",
         };
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error("Mongo connection failed:", e);
+    }
   }
   return {
     reportsRepo: new ReportsRepoMemory(),
