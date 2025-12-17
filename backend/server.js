@@ -23,7 +23,7 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 
-const mongoUri = process.env.MONGO_URI || "mongodb://localhost:27017/test";
+const mongoUri = process.env.MONGO_URI || "mongodb://localhost:27017/";
 const dbName = process.env.MONGO_DB_NAME || "mydb";
 const dataProvider = process.env.DATA_PROVIDER || "auto";
 const { reportsRepo, testRunsRepo, filesRepo, provider } = await createRepos({ provider: dataProvider, mongoUri, dbName });
