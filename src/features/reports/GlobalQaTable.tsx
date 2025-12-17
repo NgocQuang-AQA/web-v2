@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Loading from '../../components/Loading'
+import NoData from '../../assets/no-data-found_585024-42.avif'
 import { apiUrl } from '../../lib/api'
 
 type AnyRecord = Record<string, unknown>
 type FilesResponse = { total: number; items: AnyRecord[] }
+
+type Props = {
+  title?: string | null
+  collection?: string
+  detailPathPrefix?: string
+  embedded?: boolean
+}
 
 const StopIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
@@ -22,7 +30,7 @@ const ChevronUpIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
-export default function GlobalQaTable() {
+export default function GlobalQaTable({ title = 'Report Generator', collection = 'global-qa', detailPathPrefix = '/reports/global', embedded = false }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const [items, setItems] = useState<AnyRecord[]>([])
@@ -56,7 +64,7 @@ export default function GlobalQaTable() {
     let canceled = false
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), sortBy, order })
     if (name) params.set('name', name)
-    fetch(`${apiUrl('/api/files/global-qa')}?${params.toString()}`)
+    fetch(`${apiUrl(`/api/files/${collection}`)}?${params.toString()}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data: FilesResponse = await res.json()
@@ -74,7 +82,7 @@ export default function GlobalQaTable() {
     return () => {
       canceled = true
     }
-  }, [page, pageSize, sortBy, order, name])
+  }, [collection, page, pageSize, sortBy, order, name])
 
   const displayKeys = (() => {
     const first = items[0] || {}
@@ -120,14 +128,16 @@ export default function GlobalQaTable() {
   }
 
   return (
-    <div className="rounded-2xl bg-white shadow-soft p-4">
-      <div className="font-semibold mb-3">Report Generator</div>
+    <div className={embedded ? '' : 'rounded-2xl bg-white shadow-soft p-4'}>
+      {title ? <div className="font-semibold mb-3">{title}</div> : null}
       {loading ? (
         <Loading />
       ) : error ? (
         <div className="text-sm text-rose-600">Error: {error}</div>
       ) : items.length === 0 ? (
-        <div className="text-sm text-gray-500">No data</div>
+        <div className="relative w-full flex items-center justify-center py-6">
+          <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+        </div>
       ) : (
         <>
           <form
@@ -191,7 +201,7 @@ export default function GlobalQaTable() {
                 {items.map((it, idx) => {
                   const id = getId(it)
                   return (
-                  <tr key={id} className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => { if (id) navigate(`/reports/global/${id}`) }}>
+                  <tr key={id} className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => { if (id) navigate(`${detailPathPrefix}/${id}`) }}>
                     <td className="px-3 py-2 text-gray-500">{(page - 1) * pageSize + idx + 1}</td>
                     {displayKeys.map((k) => {
                       let v = (it as AnyRecord)[k]

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FlakyItem } from '../../models/types'
 import Loading from '../../components/Loading'
+import NoData from '../../assets/no-data-found_585024-42.avif'
 import { apiUrl } from '../../lib/api'
 
 async function fetchJson<T>(url: string): Promise<T | null> {
@@ -52,7 +53,11 @@ export default function FlakyAnalysisList() {
               <div className="text-gray-700">{(f.trendMs/1000).toFixed(1)}s</div>
             </div>
           ))}
-          {items.length === 0 && <div className="text-sm text-gray-500">No data</div>}
+          {items.length === 0 && (
+            <div className="relative w-full flex items-center justify-center py-6">
+              <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+            </div>
+          )}
         </div>
       )}
     </div>

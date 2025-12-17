@@ -3,6 +3,7 @@ import AppLayout from '../app/AppLayout'
 import AgentSidebar from '../app/AgentSidebar'
 import StatCard from '../features/stats/StatCard'
 import Loading from '../components/Loading'
+import NoData from '../assets/no-data-found_585024-42.avif'
 import { apiUrl } from '../lib/api'
 
 type Breakdown = { qaError: number; cnError: number; qaFail: number; cnFail: number }
@@ -50,7 +51,13 @@ export default function BugTracker() {
   const exCn = useMemo(() => (data?.ex.cn ? data.ex.cn : {}), [data])
 
   const renderRootList = (roots: string[], exMap: Record<string, unknown>, expanded: Record<string, boolean>, setExpanded: (f: Record<string, boolean>) => void) => {
-    if (!roots.length) return <div className="text-sm text-gray-500">No data</div>
+    if (!roots.length) {
+      return (
+        <div className="relative w-full flex items-center justify-center py-6">
+          <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+        </div>
+      )
+    }
     return (
       <div className="space-y-2">
         {roots.map((r) => {
@@ -99,7 +106,9 @@ export default function BugTracker() {
               <StatCard label="Total Fail" value={String(data.totalFail)} tone="warning" />
             </div>
           ) : (
-            <div className="text-sm text-gray-500">No data</div>
+            <div className="relative w-full flex items-center justify-center py-6">
+              <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+            </div>
           )}
           {data && (
             <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">

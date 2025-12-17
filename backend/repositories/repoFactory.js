@@ -138,6 +138,59 @@ class ReportsRepoMongo {
       trendMs: x.lastSeen && x.firstSeen ? new Date(x.lastSeen).getTime() - new Date(x.firstSeen).getTime() : 0,
     }));
   }
+
+  async historySessions({ from, to, page = 1, pageSize = 20 } = {}) {
+    const match = { testRun: { $ne: null } };
+    if (from || to) match.createdAt = {};
+    if (from) match.createdAt.$gte = new Date(from);
+    if (to) match.createdAt.$lte = new Date(to);
+
+    const start = (Number(page) - 1) * Number(pageSize);
+    const agg = await Report.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: "$testRun",
+          passed: { $sum: { $cond: [{ $eq: ["$status", "passed"] }, 1, 0] } },
+          failed: { $sum: { $cond: [{ $eq: ["$status", "failed"] }, 1, 0] } },
+          skipped: { $sum: { $cond: [{ $eq: ["$status", "skipped"] }, 1, 0] } },
+          durationMs: { $sum: { $ifNull: ["$durationMs", 0] } },
+          startedAt: { $min: { $ifNull: ["$startedAt", "$createdAt"] } },
+          finishedAt: { $max: { $ifNull: ["$finishedAt", "$updatedAt"] } },
+          suiteSet: { $addToSet: "$suite" },
+          createdAt: { $min: "$createdAt" },
+          updatedAt: { $max: "$updatedAt" },
+        },
+      },
+      { $sort: { finishedAt: -1 } },
+      { $skip: start },
+      { $limit: Number(pageSize) },
+    ]);
+
+    return agg.map((x) => {
+      const passed = x.passed || 0;
+      const failed = x.failed || 0;
+      const skipped = x.skipped || 0;
+      const totalTests = passed + failed + skipped;
+      const percent = totalTests ? Math.round((passed / totalTests) * 100) : 0;
+      const status = failed > 0 ? "failed" : totalTests > 0 && skipped === 0 ? "passed" : totalTests > 0 ? "partial" : "unknown";
+      return {
+        session: String(x._id || ""),
+        status,
+        passed,
+        failed,
+        skipped,
+        totalTests,
+        percent,
+        durationMs: x.durationMs || 0,
+        suiteCount: Array.isArray(x.suiteSet) ? x.suiteSet.filter(Boolean).length : 0,
+        startedAt: x.startedAt || null,
+        finishedAt: x.finishedAt || null,
+        createdAt: x.createdAt || null,
+        updatedAt: x.updatedAt || null,
+      };
+    });
+  }
 }
 
 class TestRunsRepoMongo {
@@ -244,6 +297,93 @@ class ReportsRepoMemory {
       .filter(([, v]) => v.statuses.has("passed") && v.statuses.has("failed"))
       .map(([k, v]) => ({ id: k, title: k, suite: Array.from(v.suites)[0] || "", failures: v.failures, lastSeen: v.lastSeen || null, trendMs: (v.lastSeen && v.firstSeen ? new Date(v.lastSeen).getTime() - new Date(v.firstSeen).getTime() : 0) }));
     arr.sort((a, b) => (new Date(b.lastSeen).getTime() || 0) - (new Date(a.lastSeen).getTime() || 0));
+    const start = (Number(page) - 1) * Number(pageSize);
+    return arr.slice(start, start + Number(pageSize));
+  }
+
+  async historySessions({ from, to, page = 1, pageSize = 20 } = {}) {
+    const fromD = from ? new Date(from) : null;
+    const toD = to ? new Date(to) : null;
+    const toMs = (v) => {
+      if (!v) return null;
+      const d = new Date(v);
+      const ms = d.getTime();
+      return Number.isNaN(ms) ? null : ms;
+    };
+    const items = this.items.filter((i) => {
+      if (!i.testRun) return false;
+      if (!fromD && !toD) return true;
+      const ms = toMs(i.createdAt);
+      if (ms == null) return false;
+      if (fromD && ms < fromD.getTime()) return false;
+      if (toD && ms > toD.getTime()) return false;
+      return true;
+    });
+
+    const byRun = new Map();
+    for (const i of items) {
+      const runId = String(i.testRun || "");
+      if (!runId) continue;
+      const x = byRun.get(runId) || {
+        session: runId,
+        passed: 0,
+        failed: 0,
+        skipped: 0,
+        durationMs: 0,
+        startedAt: i.startedAt || i.createdAt || null,
+        finishedAt: i.finishedAt || i.updatedAt || null,
+        suiteSet: new Set(),
+        createdAt: i.createdAt || null,
+        updatedAt: i.updatedAt || null,
+      };
+
+      if (i.status === "passed") x.passed++;
+      else if (i.status === "failed") x.failed++;
+      else if (i.status === "skipped") x.skipped++;
+      x.durationMs += i.durationMs || 0;
+
+      const saMs = toMs(i.startedAt || i.createdAt);
+      const curSaMs = toMs(x.startedAt);
+      if (saMs != null && (curSaMs == null || saMs < curSaMs)) x.startedAt = new Date(saMs);
+
+      const faMs = toMs(i.finishedAt || i.updatedAt);
+      const curFaMs = toMs(x.finishedAt);
+      if (faMs != null && (curFaMs == null || faMs > curFaMs)) x.finishedAt = new Date(faMs);
+      if (i.suite) x.suiteSet.add(i.suite);
+
+      const caMs = toMs(i.createdAt);
+      const curCaMs = toMs(x.createdAt);
+      if (caMs != null && (curCaMs == null || caMs < curCaMs)) x.createdAt = new Date(caMs);
+
+      const uaMs = toMs(i.updatedAt);
+      const curUaMs = toMs(x.updatedAt);
+      if (uaMs != null && (curUaMs == null || uaMs > curUaMs)) x.updatedAt = new Date(uaMs);
+
+      byRun.set(runId, x);
+    }
+
+    const arr = Array.from(byRun.values()).map((x) => {
+      const totalTests = x.passed + x.failed + x.skipped;
+      const percent = totalTests ? Math.round((x.passed / totalTests) * 100) : 0;
+      const status = x.failed > 0 ? "failed" : totalTests > 0 && x.skipped === 0 ? "passed" : totalTests > 0 ? "partial" : "unknown";
+      return {
+        session: x.session,
+        status,
+        passed: x.passed,
+        failed: x.failed,
+        skipped: x.skipped,
+        totalTests,
+        percent,
+        durationMs: x.durationMs,
+        suiteCount: x.suiteSet.size,
+        startedAt: x.startedAt,
+        finishedAt: x.finishedAt,
+        createdAt: x.createdAt,
+        updatedAt: x.updatedAt,
+      };
+    });
+
+    arr.sort((a, b) => (new Date(b.finishedAt || b.updatedAt || 0).getTime() || 0) - (new Date(a.finishedAt || a.updatedAt || 0).getTime() || 0));
     const start = (Number(page) - 1) * Number(pageSize);
     return arr.slice(start, start + Number(pageSize));
   }
@@ -355,6 +495,8 @@ class FilesRepoMemory {
 }
 
 export async function createRepos({ provider = "auto", mongoUri, dbName }) {
+  console.log("provider", provider);
+  
   if (provider === "mongo" || provider === "auto") {
     try {
       if (mongoUri) {

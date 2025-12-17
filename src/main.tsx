@@ -18,6 +18,9 @@ const router = createBrowserRouter([
   { path: '/agents/report', element: <ReportGenerator /> },
   { path: '/agents/notes', element: <HelperVoc /> },
   { path: '/reports/global/:id', element: <GlobalReportDetail /> },
+  { path: '/reports/global-cn/:id', element: <GlobalReportDetail /> },
+  { path: '/reports/global-live/:id', element: <GlobalReportDetail /> },
+  { path: '/reports/global-cn-live/:id', element: <GlobalReportDetail /> },
   { path: '/agents/:id', element: <AgentPlaceholder /> }
 ])
 

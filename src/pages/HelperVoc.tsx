@@ -21,6 +21,7 @@ export default function HelperVoc() {
   const initParams = new URLSearchParams(window.location.search)
   const initEnv = (initParams.get('env') as Env) || 'DEV'
   const initVocId = initParams.get('vocId') || ''
+  const initSearchBy = (initParams.get('searchBy') as 'vocId' | 'userNo') || 'vocId'
   const initTab = (initParams.get('tab') as TabKey) || 'gdr'
   const initPage = Number(initParams.get('page')) || 1
   const initSize = Number(initParams.get('size')) || 10
@@ -28,6 +29,7 @@ export default function HelperVoc() {
   const [view, setView] = useState<'preview' | 'report'>(initViewParam === 'report' ? 'report' : 'preview')
   const [env, setEnv] = useState<Env>(initEnv)
   const [vocId, setVocId] = useState(initVocId)
+  const [searchBy, setSearchBy] = useState<'vocId' | 'userNo'>(initSearchBy)
   const [user, setUser] = useState<VocUser | null>(null)
   // removed copied state; use alert for feedback
   const [active, setActive] = useState<TabKey>(initTab)
@@ -69,6 +71,7 @@ export default function HelperVoc() {
     if (didInit.current) return
     didInit.current = true
     if (!vocId) return
+    if (searchBy !== 'vocId') return
     const run = async () => {
       const baseParam = envBase[env]
       setLoading(true)
@@ -105,45 +108,51 @@ export default function HelperVoc() {
       setLoading(false)
     }
     run()
-  }, [vocId, env])
+  }, [vocId, env, searchBy])
 
   const search = async () => {
     const id = vocId.trim()
     if (!id) return
-    updateQuery({ env, vocId: id, tab: active, page: 1, size })
-    setLoading(true)
-    setError(null)
-    setRows([])
+    updateQuery({ env, vocId: id, searchBy, tab: active, page: 1, size })
     setPage(1)
-    const url = `${base}/v1/helper/voc?vocId=${encodeURIComponent(id)}`
-    let json: { success?: boolean; data?: VocUser | null; error?: { debugMessage?: string } } | null = null
-    try {
-      const res = await fetch(url)
+    setRows([])
+    setError(null)
+    setTotalPages(undefined)
+    if (searchBy === 'vocId') {
+      setLoading(true)
+      const url = `${base}/v1/helper/voc?vocId=${encodeURIComponent(id)}`
+      let json: { success?: boolean; data?: VocUser | null; error?: { debugMessage?: string } } | null = null
       try {
-        json = await res.json()
+        const res = await fetch(url)
+        try {
+          json = await res.json()
+        } catch {
+          json = null
+        }
+        if (!res.ok) {
+          const dbg = json?.error?.debugMessage
+          if (dbg) {
+            setAlertMsg(dbg)
+            setAlertOpen(true)
+          }
+          setLoading(false)
+          return
+        }
       } catch {
         json = null
       }
-      if (!res.ok) {
-        const dbg = json?.error?.debugMessage
-        if (dbg) {
-          setAlertMsg(dbg)
-          setAlertOpen(true)
-        }
-        setLoading(false)
-        return
+      const u = json?.data ?? null
+      if (u && typeof u.userNo === 'number') {
+        setUser(u)
+      } else {
+        setUser(null)
+        setError('User not found')
       }
-    } catch {
-      json = null
-    }
-    const u = json?.data ?? null
-    if (u && typeof u.userNo === 'number') {
-      setUser(u)
+      setLoading(false)
     } else {
       setUser(null)
-      setError('User not found')
+      setSearchEpoch(x => x + 1)
     }
-    setLoading(false)
   }
 
   useEffect(() => {
@@ -186,7 +195,7 @@ export default function HelperVoc() {
     let canceled = false
     async function loadPreview() {
       if (view !== 'preview') return
-      const userNo = user?.userNo
+      const userNo = searchBy === 'userNo' ? vocId.trim() : String(user?.userNo || '')
       if (!userNo) return
       setLoading(true)
       setError(null)
@@ -201,7 +210,7 @@ export default function HelperVoc() {
     }
     loadPreview()
     return () => { canceled = true }
-  }, [view, user?.userNo, active, page, size, base, currentPath])
+  }, [view, searchBy, vocId, user?.userNo, active, page, size, base, currentPath])
 
   const cols = useMemo(() => {
     if (view === 'report') {
@@ -358,11 +367,13 @@ export default function HelperVoc() {
               <SearchForm
                 env={env}
                 vocId={vocId}
+                searchBy={searchBy}
                 onChangeEnv={(v: Env) => { setEnv(v); updateQuery({ env: v }) }}
                 onChangeVocId={(v: string) => { setVocId(v); updateQuery({ vocId: v }) }}
+                onChangeSearchBy={(v: 'vocId' | 'userNo') => { setSearchBy(v); updateQuery({ searchBy: v }) }}
                 onSearch={search}
               />
-              {user && <UserSummary user={user} flagSrc={flagSrc} onCopy={copySession} />}
+              {searchBy === 'vocId' && user && <UserSummary user={user} flagSrc={flagSrc} onCopy={copySession} />}
             </>
           ) : (
             <>

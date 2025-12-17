@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import ProgressBar from '../../components/ProgressBar'
 import Loading from '../../components/Loading'
+import NoData from '../../assets/no-data-found_585024-42.avif'
 import { apiUrl } from '../../lib/api'
 
 type Summary = {
@@ -50,10 +51,22 @@ export default function LatestGlobalReport() {
 
   if (loading) return <Loading />
   if (error) return <div className="text-sm text-rose-600">{error}</div>
-  if (!qa && !cn) return <div className="text-sm text-gray-500">No data</div>
+  if (!qa && !cn) {
+    return (
+      <div className="relative w-full flex items-center justify-center py-6">
+        <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+      </div>
+    )
+  }
 
   const renderCard = (pair: { latest: Latest | null; summary: Summary | null } | null, fallbackTitle: string) => {
-    if (!pair || !pair.latest || !pair.summary) return <div className="text-sm text-gray-500">No data</div>
+    if (!pair || !pair.latest || !pair.summary) {
+      return (
+        <div className="relative w-full flex items-center justify-center py-6">
+          <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+        </div>
+      )
+    }
     const t: 'success' | 'warning' | 'danger' = pair.summary.percent >= 95 ? 'success' : pair.summary.percent >= 80 ? 'warning' : 'danger'
     return (
       <div className="rounded-2xl bg-white shadow-soft p-4">

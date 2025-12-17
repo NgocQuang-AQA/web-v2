@@ -4,6 +4,100 @@ import { Router } from "express";
 export function createReportsRouter({ reportsRepo, testRunsRepo, filesRepo, scanReports, scanSerenityLatest }) {
   const router = Router();
 
+  router.get("/history", async (req, res) => {
+    const { from, to, page = 1, pageSize = 20 } = req.query;
+
+    const sessionPage = Math.max(1, Number(page) || 1);
+    const sessionPageSize = Math.max(1, Math.min(100, Number(pageSize) || 20));
+    const needSessions = sessionPage * sessionPageSize;
+
+    const toMs = (v) => {
+      if (v == null || v === "") return null;
+      const d = new Date(v);
+      const ms = d.getTime();
+      return Number.isNaN(ms) ? null : ms;
+    };
+    const toIso = (ms) => (typeof ms === "number" && Number.isFinite(ms) ? new Date(ms).toISOString() : null);
+
+    const groups = new Map();
+    const order = [];
+
+    const maxMessages = 5000;
+    const batchSize = 500;
+    let scanned = 0;
+    let msgPage = 1;
+
+    while (scanned < maxMessages) {
+      const rows = await filesRepo.find("his-chat", { page: msgPage, pageSize: batchSize, from, to, sortBy: "time_insert", order: "desc" });
+      if (!rows.length) break;
+      scanned += rows.length;
+
+      for (const r of rows) {
+        const session = String(r.session || "");
+        if (!session) continue;
+        let g = groups.get(session);
+        if (!g) {
+          g = { session, messages: [], startedMs: null, finishedMs: null };
+          groups.set(session, g);
+          order.push(session);
+        }
+
+        const ms = toMs(r.time_insert || r.time || r.createdAt);
+        if (ms != null) {
+          g.startedMs = g.startedMs == null ? ms : Math.min(g.startedMs, ms);
+          g.finishedMs = g.finishedMs == null ? ms : Math.max(g.finishedMs, ms);
+        }
+
+        g.messages.push({
+          id: r.id || r._id,
+          time: r.time || r.time_insert || null,
+          from: r.from || "",
+          content: r.content || "",
+          modelVersion: r.modelVersion || "",
+        });
+      }
+
+      if (order.length >= needSessions && scanned >= needSessions * 2) break;
+      msgPage += 1;
+    }
+
+    const start = (sessionPage - 1) * sessionPageSize;
+    const pageSessions = order.slice(start, start + sessionPageSize);
+
+    const items = pageSessions.map((sid) => {
+      const g = groups.get(sid);
+      const fromRank = (f) => {
+        const v = String(f || "").toLowerCase();
+        if (v === "user") return 0;
+        if (v === "gemini") return 1;
+        return 2;
+      };
+      const msgs = Array.isArray(g?.messages)
+        ? g.messages.slice().sort((a, b) => {
+          const ams = toMs(a.time);
+          const bms = toMs(b.time);
+          if (ams != null && bms != null && ams !== bms) return ams - bms;
+          if (ams != null && bms == null) return -1;
+          if (ams == null && bms != null) return 1;
+          const ar = fromRank(a.from);
+          const br = fromRank(b.from);
+          if (ar !== br) return ar - br;
+          const aid = String(a.id || "");
+          const bid = String(b.id || "");
+          return aid.localeCompare(bid);
+        })
+        : [];
+      return {
+        session: sid,
+        startedAt: toIso(g?.startedMs),
+        finishedAt: toIso(g?.finishedMs),
+        messages: msgs,
+      };
+    });
+
+    res.json({ items });
+  });
+
   router.get("/", async (req, res) => {
     const { page = 1, pageSize = 20, status } = req.query;
     const filter = {};

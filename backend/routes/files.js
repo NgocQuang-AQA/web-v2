@@ -38,12 +38,17 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
     dir = fromWindowsToWsl(dir);
     const qaRootEnv = toPosix(process.env.SERENITY_HISTORY_DIR || "");
     const cnRootEnv = toPosix(process.env.SERENITY_HISTORY_DIR_CN || (qaRootEnv ? qaRootEnv.replace("global-qa", "global-cn") : ""));
-    if (collection === "global-qa" || collection === "qa" || collection.includes("qa")) {
-      if (qaRootEnv) dir = replacePrefix(dir, "/data/global-qa/report_history", qaRootEnv);
-      else dir = replacePrefix(dir, "/data/global-qa/report_history", "/mnt/d/Project/global-qa/report_history");
-    } else if (collection === "global-cn" || collection === "cn" || collection.includes("cn")) {
+    const col = String(collection || "").toLowerCase();
+    if (col.includes("cn") || col === "cn") {
       const cnFallback = "/mnt/d/Project/global-cn/report_history";
-      dir = replacePrefix(dir, "/data/global-cn/report_history", cnRootEnv || cnFallback);
+      const cnRoot = cnRootEnv || cnFallback;
+      dir = replacePrefix(dir, "/data/global-cn/report_history", cnRoot);
+      dir = replacePrefix(dir, "/data/global-cn-live/report_history", cnRoot);
+    } else if (col.includes("qa") || col.includes("global") || col === "qa") {
+      const qaFallback = "/mnt/d/Project/global-qa/report_history";
+      const qaRoot = qaRootEnv || qaFallback;
+      dir = replacePrefix(dir, "/data/global-qa/report_history", qaRoot);
+      dir = replacePrefix(dir, "/data/global-live/report_history", qaRoot);
     }
     return dir;
   }

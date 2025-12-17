@@ -10,6 +10,9 @@ export default function AgentSidebar() {
     if (pathname.startsWith('/agents/ta')) return 'ta'
     if (pathname.startsWith('/agents/report')) return 'report'
     if (pathname.startsWith('/reports/global/')) return 'report'
+    if (pathname.startsWith('/reports/global-cn/')) return 'report'
+    if (pathname.startsWith('/reports/global-live/')) return 'report'
+    if (pathname.startsWith('/reports/global-cn-live/')) return 'report'
     const m = pathname.match(/^\/agents\/(\w+)/)
     if (m) return m[1]
     return ''

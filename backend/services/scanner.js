@@ -230,6 +230,7 @@ async function summarizeDir(dir) {
     const counts = { passed: 0, failed: 0, broken: 0, skipped: 0, unknown: 0 };
     const byKey = new Map();
     let total = 0;
+    let usedIndexCounts = false;
     let indexHtmlText = null;
     try {
       const ih = path.join(dir, "index.html");
@@ -285,6 +286,7 @@ async function summarizeDir(dir) {
         counts.broken = b;
         counts.skipped = s;
         total = p + f + b + s;
+        usedIndexCounts = true;
       } else {
         const nearSeverityIdx = indexHtmlText.indexOf('id="severityChart"');
         const nearResultIdx = indexHtmlText.indexOf('id="resultChart"');
@@ -303,6 +305,7 @@ async function summarizeDir(dir) {
             counts.broken = b;
             counts.skipped = s;
             total = p + f + b + s;
+            usedIndexCounts = true;
           }
         }
         let pSum = 0, fSum = 0, eSum = 0;
@@ -347,11 +350,17 @@ async function summarizeDir(dir) {
           counts.broken = eSum;
           counts.skipped = 0;
           total = pSum + fSum + eSum;
+          usedIndexCounts = true;
         }
         const testsRe = /(\d+)\s+tests/;
         const tm = indexHtmlText.match(testsRe);
         if (tm) {
-          total = Number(tm[1] || 0);
+          const parsedTotal = Number(tm[1] || 0);
+          if (!usedIndexCounts) {
+            total = parsedTotal;
+          } else if (parsedTotal && parsedTotal !== total) {
+            dlog("total-mismatch", { parsedTotal, total, counts });
+          }
         }
       }
     }
