@@ -15,3 +15,14 @@ export function apiUrl(path: string): string {
   const baseNoTrailingSlash = baseTrimmed.endsWith('/') ? baseTrimmed.slice(0, -1) : baseTrimmed
   return `${baseNoTrailingSlash}${p}`
 }
+
+export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  const url = apiUrl(path)
+  const token =
+    (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null) ||
+    (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('auth_token') : null) ||
+    ''
+  const headers = new Headers(init?.headers || {})
+  if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`)
+  return fetch(url, { ...init, headers })
+}

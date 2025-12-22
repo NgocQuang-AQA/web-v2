@@ -8,6 +8,9 @@ import { createReportsRouter } from "./routes/reports.js";
 import { createScanner } from "./services/scanner.js";
 import { createFilesRouter } from "./routes/files.js";
 import { createChatRouter } from "./routes/chat.js";
+import { createAuthRouter } from "./routes/auth.js";
+import { createAdminRouter } from "./routes/admin.js";
+import { createAuthMiddleware, roles } from "./middleware/auth.js";
 
 const envCandidates = [
   path.resolve(process.cwd(), ".env"),
@@ -28,14 +31,19 @@ const dbName = process.env.MONGO_DB_NAME || "mydb";
 const dataProvider = process.env.DATA_PROVIDER || "auto";
 const { reportsRepo, testRunsRepo, filesRepo, provider } = await createRepos({ provider: dataProvider, mongoUri, dbName });
 const { scanReports, scanSerenityLatest, summarizeDir } = createScanner(reportsRepo);
+const tokenSecret = process.env.TOKEN_SECRET || process.env.JWT_SECRET || "dev-secret";
+const { requireAuth } = createAuthMiddleware(tokenSecret);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
-app.use("/api/reports", createReportsRouter({ reportsRepo, testRunsRepo, filesRepo, scanReports, scanSerenityLatest }));
-app.use("/api/files", createFilesRouter({ filesRepo, summarizeDir }));
-app.use("/api/chat", createChatRouter({ filesRepo, reportsRepo }));
+app.use("/api/auth", createAuthRouter({ secret: tokenSecret }));
+app.use("/api/admin", requireAuth([roles.admin]), createAdminRouter());
+
+app.use("/api/reports", requireAuth([roles.admin, roles.ba, roles.be]), createReportsRouter({ reportsRepo, testRunsRepo, filesRepo, scanReports, scanSerenityLatest }));
+app.use("/api/files", requireAuth([roles.admin, roles.ba, roles.be]), createFilesRouter({ filesRepo, summarizeDir }));
+app.use("/api/chat", requireAuth([roles.admin, roles.ba, roles.be]), createChatRouter({ filesRepo, reportsRepo }));
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => {

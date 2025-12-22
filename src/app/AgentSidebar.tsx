@@ -5,6 +5,34 @@ import { Link, useLocation } from 'react-router-dom'
 export default function AgentSidebar() {
   const location = useLocation()
   const pathname = location.pathname
+  const role = (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_role') : '') || 'Guest'
+  const storedMenus = (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_menus') : null)
+  let menus: string[] = []
+  try {
+    menus = storedMenus ? JSON.parse(storedMenus) : []
+  } catch {
+    menus = []
+  }
+
+  const visibleAgents = agents.filter(a => {
+    if (menus && menus.length > 0) {
+      return menus.includes(a.id)
+    }
+    const r = role.toUpperCase()
+    if (r === 'BA') {
+      return ['report', 'notes'].includes(a.id)
+    }
+    if (r === 'BE') {
+      // BE: hide JIRA, Test Case
+      return !['jira', 'cases'].includes(a.id)
+    }
+    if (r === 'OTHER' || r === 'USER') {
+      // User: only Helper VOC
+      return ['notes'].includes(a.id)
+    }
+    return true // Admin or others see all
+  })
+
   const activeId = (() => {
     if (pathname === '/' || pathname.startsWith('/agents/daily')) return 'daily'
     if (pathname.startsWith('/agents/ta')) return 'ta'
@@ -24,7 +52,7 @@ export default function AgentSidebar() {
         {/* <div className="text-sm bg-indigo-50 text-indigo-600 rounded-lg px-2 py-1">7</div> */}
       </div>
       <div className="space-y-3">
-        {agents.map(a => {
+        {visibleAgents.map(a => {
           const active = a.id === activeId
           const base = 'w-full flex items-center justify-between rounded-xl px-4 py-3 bg-gray-50 hover:bg-gray-100'
           const tone = active ? 'bg-indigo-50 hover:bg-indigo-100 ring-1 ring-indigo-200' : ''
@@ -44,6 +72,22 @@ export default function AgentSidebar() {
           </Link>
           )
         })}
+
+        {role.toUpperCase() === 'ADMIN' && (
+          <Link
+            to="/admin/accounts"
+            className={`w-full flex items-center justify-between rounded-xl px-4 py-3 bg-gray-50 hover:bg-gray-100 ${
+              pathname.startsWith('/admin/accounts') ? 'bg-indigo-50 hover:bg-indigo-100 ring-1 ring-indigo-200' : ''
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="text-xl">👥</div>
+              <div className={`text-sm font-medium ${pathname.startsWith('/admin/accounts') ? 'text-indigo-700' : ''}`}>
+                Account Management
+              </div>
+            </div>
+          </Link>
+        )}
       </div>
     </div>
   )

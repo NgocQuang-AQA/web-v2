@@ -126,10 +126,16 @@ export const unitModeNameMap: Record<number, string> = {
   0: 'STROKE',
   1: 'MATCH',
   2: 'SKINS',
+  6: 'DRIVING RANGE',
   7: 'STABLE_FORD',
   8: 'NEW_PERIO',
   9: 'LAS_VEGAS',
-  10: 'FOUR_SOMES'
+  10: 'SCRAMBLE',
+  11: 'CHIP_AND_PUT',
+  12: 'ANALYSIS_ROOM',
+  14: 'PAR3_CHALLENGE',
+  15: 'CTTP',
+  16: 'LONGEST'
 }
 
 export const tabsPreview: { key: TabKey; label: string; path: string }[] = [

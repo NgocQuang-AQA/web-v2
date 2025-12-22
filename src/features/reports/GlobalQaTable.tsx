@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Loading from '../../components/Loading'
 import NoData from '../../assets/no-data-found_585024-42.avif'
-import { apiUrl } from '../../lib/api'
+import { apiFetch } from '../../lib/api'
 
 type AnyRecord = Record<string, unknown>
 type FilesResponse = { total: number; items: AnyRecord[] }
@@ -12,6 +12,8 @@ type Props = {
   collection?: string
   detailPathPrefix?: string
   embedded?: boolean
+  showSearch?: boolean
+  nameOverride?: string
 }
 
 const StopIcon = ({ className }: { className?: string }) => (
@@ -30,7 +32,7 @@ const ChevronUpIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
-export default function GlobalQaTable({ title = 'Report Generator', collection = 'global-qa', detailPathPrefix = '/reports/global', embedded = false }: Props) {
+export default function GlobalQaTable({ title = 'Report Generator', collection = 'global-qa', detailPathPrefix = '/reports/global', embedded = false, showSearch = true, nameOverride }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const [items, setItems] = useState<AnyRecord[]>([])
@@ -48,6 +50,7 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
   const [sortBy, setSortBy] = useState<'name' | 'time_insert'>(initSortBy)
   const [order, setOrder] = useState<'asc' | 'desc'>(initOrder)
   const [name, setName] = useState(initName)
+  const effectiveName = nameOverride ?? name
 
   const updateQuery = (patch: Record<string, unknown>) => {
     const params = new URLSearchParams(location.search)
@@ -63,8 +66,8 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
   useEffect(() => {
     let canceled = false
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), sortBy, order })
-    if (name) params.set('name', name)
-    fetch(`${apiUrl(`/api/files/${collection}`)}?${params.toString()}`)
+    if (effectiveName) params.set('name', effectiveName)
+    apiFetch(`/api/files/${collection}?${params.toString()}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data: FilesResponse = await res.json()
@@ -82,7 +85,7 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
     return () => {
       canceled = true
     }
-  }, [collection, page, pageSize, sortBy, order, name])
+  }, [collection, page, pageSize, sortBy, order, effectiveName])
 
   const displayKeys = (() => {
     const first = items[0] || {}
@@ -140,23 +143,25 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
         </div>
       ) : (
         <>
-          <form
-            className="flex items-center gap-3 mb-3"
-            onSubmit={(e) => {
-              e.preventDefault()
-              setLoading(true)
-              setPage(1)
-              updateQuery({ name, page: 1 })
-            }}
-          >
-            <input value={name} onChange={(e) => setName(e.target.value)} className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="Search by Name" />
-            <button className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 text-white text-sm px-3 py-2 shadow-soft hover:bg-indigo-700 active:scale-[0.98] transition" type="submit">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-              </svg>
-              <span className="font-medium">Search</span>
-            </button>
-          </form>
+          {showSearch && (
+            <form
+              className="flex items-center gap-3 mb-3"
+              onSubmit={(e) => {
+                e.preventDefault()
+                setLoading(true)
+                setPage(1)
+                updateQuery({ name, page: 1 })
+              }}
+            >
+              <input value={name} onChange={(e) => setName(e.target.value)} className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="Search by Name" />
+              <button className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 text-white text-sm px-3 py-2 shadow-soft hover:bg-indigo-700 active:scale-[0.98] transition" type="submit">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+                <span className="font-medium">Search</span>
+              </button>
+            </form>
+          )}
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>

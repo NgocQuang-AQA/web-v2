@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react'
 import type { FlakyItem } from '../../models/types'
 import Loading from '../../components/Loading'
 import NoData from '../../assets/no-data-found_585024-42.avif'
-import { apiUrl } from '../../lib/api'
+import { apiUrl, apiFetch } from '../../lib/api'
 
 async function fetchJson<T>(url: string): Promise<T | null> {
   try {
-    const res = await fetch(url)
+    const res = await apiFetch(url)
     if (!res.ok) return null
     return await res.json()
   } catch {

@@ -1,12 +1,13 @@
-import type { Env } from '../../models/helperVoc'
+import type { Env, TabKey } from '../../models/helperVoc'
 import Loading from '../../components/Loading'
 import NoData from '../../assets/no-data-found_585024-42.avif'
-import { formatCell, formatDate, getModeName, shouldHighlightMode, getSoftwareName, getDifficultyName, getUnitName, getClubName, getBallName, toLabel, getSwingVideoUrls, getTourTitle } from '../../utils/helperVoc'
+import { formatCell, formatDate, getModeName, shouldHighlightMode, getSoftwareName, getDifficultyName, getUnitName, getClubName, getBallName, getIsTournamentLabel, toLabel, getSwingVideoUrls, getTourTitle } from '../../utils/helperVoc'
 
 type Props = {
   rows: Record<string, unknown>[]
   cols: string[]
   env: Env
+  tab: TabKey
   page: number
   size: number
   loading: boolean
@@ -14,7 +15,7 @@ type Props = {
   onOpenSwing: (urls: string[]) => void
 }
 
-export default function RecordsTable({ rows, cols, env, page, size, loading, error, onOpenSwing }: Props) {
+export default function RecordsTable({ rows, cols, env, tab, page, size, loading, error, onOpenSwing }: Props) {
   if (loading) return <Loading />
   if (error) return <div className="text-sm text-rose-600">{error}</div>
   if (rows.length === 0)
@@ -39,9 +40,17 @@ export default function RecordsTable({ rows, cols, env, page, size, loading, err
             <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
               <td className="px-3 py-2">{(page - 1) * size + idx + 1}</td>
               {cols.map((k) => (
-                <td key={k} className={`px-3 py-2 ${k === 'modeName' && shouldHighlightMode(row as Record<string, unknown>) ? 'text-rose-600' : ''}`}>
+                <td key={k} className={`px-3 py-2 ${k === 'modeName' && tab !== 'gs' && shouldHighlightMode(row as Record<string, unknown>) ? 'text-rose-600' : ''}`}>
                   {k === 'modeName'
-                    ? getModeName(row as Record<string, unknown>)
+                    ? tab === 'gs'
+                      ? (() => {
+                          const name = getModeName(row as Record<string, unknown>)
+                          if (!name) return <span className="text-rose-600">N/A</span>
+                          return name
+                        })()
+                      : getModeName(row as Record<string, unknown>)
+                    : k === 'pr_istournament'
+                    ? getIsTournamentLabel((row as Record<string, unknown>)[k])
                     : k === 'tm_time_start' ||
                       k === 'tm_time_end' ||
                       k === 'timeStart' ||

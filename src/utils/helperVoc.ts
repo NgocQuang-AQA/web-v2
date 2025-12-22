@@ -86,6 +86,7 @@ export function toLabel(key: string): string {
     total_hit: 'Total Hit',
     pr_totplayhole: 'Total Play Hole',
     pr_difficulty: 'Difficulty',
+    pr_istournament: 'Is Tournament',
     pg_saletype: 'Sale Type',
     pg_mode: 'Mode',
     pg_unit_cd: 'Unit CD',
@@ -126,6 +127,13 @@ export function toLabel(key: string): string {
   return m[key] || key
 }
 
+export function getIsTournamentLabel(v: unknown): 'Yes' | 'No' {
+  if (v == null) return 'No'
+  if (typeof v === 'number') return v === 1 ? 'Yes' : 'No'
+  if (typeof v === 'string') return v.trim() === '1' ? 'Yes' : 'No'
+  return 'No'
+}
+
 export function formatCell(v: unknown): string {
   if (v == null) return ''
   if (typeof v === 'string') return v
@@ -154,7 +162,7 @@ export function formatDate(v: unknown): string {
 }
 
 export function getModeName(row: Record<string, unknown>): string {
-  const unit = (row as Record<string, unknown>).pg_unit_cd
+  const unit = (row as Record<string, unknown>).pg_mode
   if (unit != null) {
     let n: number | null = null
     if (typeof unit === 'number') n = unit

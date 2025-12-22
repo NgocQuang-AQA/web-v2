@@ -245,6 +245,7 @@ export default function HelperVoc() {
         'total_hit',
         'pr_totplayhole',
         'pr_difficulty',
+        'pr_istournament',
         'pg_saletype',
         'pg_mode',
         'modeName',
@@ -337,6 +338,26 @@ export default function HelperVoc() {
     if (!user) return
     const text = `/gzsession ${user.userNo} ${user.userId} ${user.countryCd}`
     try {
+      let copied = false
+      if (window.isSecureContext && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text)
+        copied = true
+      } else {
+        const el = document.createElement('textarea')
+        el.value = text
+        el.setAttribute('readonly', 'true')
+        el.style.position = 'fixed'
+        el.style.top = '0'
+        el.style.left = '0'
+        el.style.opacity = '0'
+        document.body.appendChild(el)
+        el.focus()
+        el.select()
+        el.setSelectionRange(0, text.length)
+        copied = document.execCommand('copy')
+        document.body.removeChild(el)
+      }
+      if (!copied) throw new Error('copy_failed')
       setNoticeMsg(`Copied '${text}' !`)
       setNoticeOpen(true)
       setNoticeHiding(false)
@@ -345,7 +366,8 @@ export default function HelperVoc() {
         setTimeout(() => setNoticeOpen(false), 1000)
       }, 3000)
     } catch {
-      // ignore
+      setAlertMsg('Copy failed. Please copy manually.')
+      setAlertOpen(true)
     }
   }
 
@@ -401,6 +423,7 @@ export default function HelperVoc() {
               rows={effectiveRows}
               cols={cols}
               env={env}
+              tab={active}
               page={page}
               size={size}
               loading={loading}

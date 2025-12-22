@@ -3,7 +3,7 @@ import AppLayout from '../app/AppLayout'
 import AgentSidebar from '../app/AgentSidebar'
 import QuickActionsBar from '../features/actions/QuickActionsBar'
 import ChatDock from '../features/chat/ChatDock'
-import { apiUrl } from '../lib/api'
+import { apiFetch } from '../lib/api'
 
 type HistoryMessage = {
   id?: string
@@ -33,7 +33,7 @@ function TestHistoryPanel() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch(apiUrl(`/api/reports/history?page=${page}&pageSize=${page === 1 ? 4 : 5}`))
+        const res = await apiFetch(`/api/reports/history?page=${page}&pageSize=${page === 1 ? 4 : 5}`)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const json = await res.json()
         if (!canceled) {

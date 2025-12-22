@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import NoData from '../assets/no-data-found_585024-42.avif'
+import { apiFetch } from '../lib/api'
 
 export default function Login() {
   const navigate = useNavigate()
-  const [name, setName] = useState('')
+  const [name, setName] = useState(() => localStorage.getItem('remember_me_username') || '')
   const [password, setPassword] = useState('')
-  const [remember, setRemember] = useState(false)
+  const [remember, setRemember] = useState(() => !!localStorage.getItem('remember_me_username'))
   const [error, setError] = useState<string | null>(null)
   const [imgSrc, setImgSrc] = useState<string>('/signin-image.jpg')
 
@@ -17,7 +18,47 @@ export default function Login() {
       setError('Vui lòng nhập đầy đủ thông tin')
       return
     }
-    navigate('/agents/daily')
+    const run = async () => {
+      try {
+        const res = await apiFetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: name, password }),
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          setError(data?.message || 'Đăng nhập thất bại')
+          return
+        }
+        const token: string = String(data?.token || '')
+        const role: string = String(data?.role || '')
+        const username: string = String(data?.username || '')
+        const menus: string[] = Array.isArray(data?.menus) ? data.menus : []
+
+        if (token) {
+          if (remember) {
+            localStorage.setItem('auth_token', token)
+            localStorage.setItem('remember_me_username', username)
+          } else {
+            sessionStorage.setItem('auth_token', token)
+            localStorage.removeItem('remember_me_username')
+          }
+          localStorage.setItem('auth_role', role)
+          localStorage.setItem('auth_username', username)
+          localStorage.setItem('auth_menus', JSON.stringify(menus))
+        }
+        const go = (() => {
+          const r = role.toUpperCase()
+          if (r === 'OTHER' || r === 'USER') return '/agents/notes'
+          if (r === 'BA') return '/agents/notes'
+          return '/agents/daily'
+        })()
+        navigate(go)
+      } catch {
+        setError('Đăng nhập thất bại')
+      }
+    }
+    run()
   }
 
   return (

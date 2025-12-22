@@ -500,7 +500,7 @@ export async function createRepos({ provider = "auto", mongoUri, dbName }) {
   if (provider === "mongo" || provider === "auto") {
     try {
       if (mongoUri) {
-        await mongoose.connect(mongoUri);
+        await mongoose.connect(mongoUri, dbName ? { dbName } : undefined);
         return {
           reportsRepo: new ReportsRepoMongo(),
           testRunsRepo: new TestRunsRepoMongo(),

@@ -7,11 +7,11 @@ import StatCard from '../features/stats/StatCard'
 // import ChatDock from '../features/chat/ChatDock'
 type StatsItem = { name?: string; successRate?: number; failedCount?: number; flakyCount?: number; totalRuntimeMinutes?: number; timeRange?: string[] }
 import LatestGlobalReport from '../features/reports/LatestGlobalReport'
-import { apiUrl } from '../lib/api'
+import { apiUrl, apiFetch } from '../lib/api'
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T | null> {
   try {
-    const res = await fetch(url, init)
+    const res = await apiFetch(url, init)
     if (!res.ok) return null
     return await res.json()
   } catch {

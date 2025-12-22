@@ -10,20 +10,25 @@ import GlobalReportDetail from './pages/GlobalReportDetail.tsx'
 import BugTracker from './pages/BugTracker.tsx'
 import HelperVoc from './pages/HelperVoc.tsx'
 import Login from './pages/Login.tsx'
+import NotFound from './pages/NotFound.tsx'
+import AccountManagement from './pages/admin/AccountManagement.tsx'
+import Protected from './app/Protected'
 
 const router = createBrowserRouter([
-  { path: '/', element: <DailyAssistant /> },
+  { path: '/', element: <Protected><DailyAssistant /></Protected> },
   { path: '/login', element: <Login /> },
-  { path: '/agents/daily', element: <DailyAssistant /> },
-  { path: '/agents/ta', element: <TestAutomationAgent /> },
-  { path: '/agents/bug', element: <BugTracker /> },
-  { path: '/agents/report', element: <ReportGenerator /> },
-  { path: '/agents/notes', element: <HelperVoc /> },
-  { path: '/reports/global/:id', element: <GlobalReportDetail /> },
-  { path: '/reports/global-cn/:id', element: <GlobalReportDetail /> },
-  { path: '/reports/global-live/:id', element: <GlobalReportDetail /> },
-  { path: '/reports/global-cn-live/:id', element: <GlobalReportDetail /> },
-  { path: '/agents/:id', element: <AgentPlaceholder /> }
+  { path: '/404', element: <NotFound /> },
+  { path: '/agents/daily', element: <Protected><DailyAssistant /></Protected> },
+  { path: '/agents/ta', element: <Protected><TestAutomationAgent /></Protected> },
+  { path: '/agents/bug', element: <Protected><BugTracker /></Protected> },
+  { path: '/agents/report', element: <Protected><ReportGenerator /></Protected> },
+  { path: '/agents/notes', element: <Protected><HelperVoc /></Protected> },
+  { path: '/admin/accounts', element: <Protected><AccountManagement /></Protected> },
+  { path: '/reports/global/:id', element: <Protected><GlobalReportDetail /></Protected> },
+  { path: '/reports/global-cn/:id', element: <Protected><GlobalReportDetail /></Protected> },
+  { path: '/reports/global-live/:id', element: <Protected><GlobalReportDetail /></Protected> },
+  { path: '/reports/global-cn-live/:id', element: <Protected><GlobalReportDetail /></Protected> },
+  { path: '/agents/:id', element: <Protected><AgentPlaceholder /></Protected> }
 ])
 
 createRoot(document.getElementById('root')!).render(

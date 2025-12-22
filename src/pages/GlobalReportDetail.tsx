@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
 import AppLayout from '../app/AppLayout'
 import AgentSidebar from '../app/AgentSidebar'
-import { apiUrl } from '../lib/api'
+import { apiUrl, apiFetch } from '../lib/api'
 import Loading from '../components/Loading'
 
 type Doc = { id?: string; _id?: string; name?: string; time_insert?: string }
@@ -28,7 +28,7 @@ export default function GlobalReportDetail() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch(apiUrl(`/api/files/${collection}/${id}`))
+        const res = await apiFetch(`/api/files/${collection}/${id}`)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data: Doc = await res.json()
         if (!canceled) setDoc(data)

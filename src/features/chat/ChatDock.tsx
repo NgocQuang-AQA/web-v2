@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiUrl } from '../../lib/api'
+import { apiFetch } from '../../lib/api'
 import Loading from '../../components/Loading'
 import NoData from '../../assets/no-data-found_585024-42.avif'
 
@@ -14,7 +14,7 @@ export default function ChatDock() {
   const loadHistory = async (session?: string) => {
     setError(null)
     try {
-      const res = await fetch(apiUrl('/api/chat/history'))
+      const res = await apiFetch('/api/chat/history')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
       const items = Array.isArray(json?.items) ? (json.items as Row[]) : []
@@ -59,7 +59,7 @@ export default function ChatDock() {
     setError(null)
     setInput('')
     try {
-      const res = await fetch(apiUrl('/api/chat/gemini'), {
+      const res = await apiFetch('/api/chat/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
