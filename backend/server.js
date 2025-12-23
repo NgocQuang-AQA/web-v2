@@ -6,7 +6,7 @@ import path from "node:path";
 import { createRepos } from "./repositories/repoFactory.js";
 import { createReportsRouter } from "./routes/reports.js";
 import { createScanner } from "./services/scanner.js";
-import { createFilesRouter } from "./routes/files.js";
+import { createFilesRouter, createFilesStaticRouter } from "./routes/files.js";
 import { createChatRouter } from "./routes/chat.js";
 import { createAuthRouter } from "./routes/auth.js";
 import { createAdminRouter } from "./routes/admin.js";
@@ -42,7 +42,8 @@ app.use("/api/auth", createAuthRouter({ secret: tokenSecret }));
 app.use("/api/admin", requireAuth([roles.admin]), createAdminRouter());
 
 app.use("/api/reports", requireAuth([roles.admin, roles.ba, roles.be]), createReportsRouter({ reportsRepo, testRunsRepo, filesRepo, scanReports, scanSerenityLatest }));
-app.use("/api/files", requireAuth([roles.admin, roles.ba, roles.be]), createFilesRouter({ filesRepo, summarizeDir }));
+app.use("/api/files", createFilesStaticRouter({ filesRepo }));
+app.use("/api/files", requireAuth([roles.admin, roles.ba, roles.be, roles.user]), createFilesRouter({ filesRepo, summarizeDir }));
 app.use("/api/chat", requireAuth([roles.admin, roles.ba, roles.be]), createChatRouter({ filesRepo, reportsRepo }));
 
 const port = process.env.PORT || 4000;

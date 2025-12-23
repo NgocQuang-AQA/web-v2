@@ -1,18 +1,13 @@
 import StatusDot from '../components/StatusDot'
 import { agents } from '../data/mock/agents'
 import { Link, useLocation } from 'react-router-dom'
+import { getAuthMenus, getAuthRole } from '../lib/api'
 
 export default function AgentSidebar() {
   const location = useLocation()
   const pathname = location.pathname
-  const role = (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_role') : '') || 'Guest'
-  const storedMenus = (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_menus') : null)
-  let menus: string[] = []
-  try {
-    menus = storedMenus ? JSON.parse(storedMenus) : []
-  } catch {
-    menus = []
-  }
+  const role = getAuthRole()
+  const menus = getAuthMenus()
 
   const visibleAgents = agents.filter(a => {
     if (menus && menus.length > 0) {

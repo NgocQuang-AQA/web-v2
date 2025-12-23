@@ -1,11 +1,10 @@
 import { Navigate, useLocation } from 'react-router-dom'
+import { getAuthRole, getAuthToken } from '../lib/api'
 
 export default function Protected({ children }: { children: React.ReactNode }) {
   const location = useLocation()
-  const token =
-    (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null) ||
-    (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('auth_token') : null)
-  const role = (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_role') : '') || 'Guest'
+  const token = getAuthToken()
+  const role = getAuthRole()
 
   if (!token) return <Navigate to="/login" replace />
 
@@ -30,4 +29,3 @@ export default function Protected({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>
 }
-

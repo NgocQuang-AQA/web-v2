@@ -2,17 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FlakyItem } from '../../models/types'
 import Loading from '../../components/Loading'
 import NoData from '../../assets/no-data-found_585024-42.avif'
-import { apiUrl, apiFetch } from '../../lib/api'
-
-async function fetchJson<T>(url: string): Promise<T | null> {
-  try {
-    const res = await apiFetch(url)
-    if (!res.ok) return null
-    return await res.json()
-  } catch {
-    return null
-  }
-}
+import { apiJson } from '../../lib/api'
 
 export default function FlakyAnalysisList() {
   const [items, setItems] = useState<FlakyItem[]>([])
@@ -24,7 +14,7 @@ export default function FlakyAnalysisList() {
     async function load() {
       setLoading(true)
       setError(null)
-      const data = await fetchJson<{ items: FlakyItem[] }>(apiUrl('/api/reports/flaky'))
+      const data = await apiJson<{ items: FlakyItem[] }>('/api/reports/flaky')
       if (!canceled) {
         setItems(data?.items || [])
         setLoading(false)

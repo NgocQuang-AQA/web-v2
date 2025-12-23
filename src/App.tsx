@@ -6,19 +6,9 @@ import FlakyAnalysisList from './features/flaky/FlakyAnalysisList'
 import QuickActionsBar from './features/actions/QuickActionsBar'
 import ChatDock from './features/chat/ChatDock'
 import GlobalQaTable from './features/reports/GlobalQaTable'
-import { apiUrl } from './lib/api'
+import { apiJson } from './lib/api'
 import { useEffect, useState } from 'react'
 import type { SummaryStats } from './models/types'
-
-async function fetchJson<T>(url: string): Promise<T | null> {
-  try {
-    const res = await fetch(url)
-    if (!res.ok) return null
-    return await res.json()
-  } catch {
-    return null
-  }
-}
 
 function App() {
   const [stats, setStats] = useState<SummaryStats>([])
@@ -26,7 +16,7 @@ function App() {
   useEffect(() => {
     let canceled = false
     async function load() {
-      const data = await fetchJson<SummaryStats>(apiUrl('/api/reports/stats'))
+      const data = await apiJson<SummaryStats>('/api/reports/stats')
       if (!canceled && data) setStats(data)
     }
     load()

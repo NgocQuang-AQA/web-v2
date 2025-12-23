@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ChatBotModal from '../features/chat/ChatBotModal'
+import { clearAuth, getAuthUsername } from '../lib/api'
 
 export default function Topbar() {
   const navigate = useNavigate()
@@ -10,7 +11,7 @@ export default function Topbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   
-  const username = (typeof localStorage !== 'undefined' ? localStorage.getItem('auth_username') : '') || 'User'
+  const username = getAuthUsername()
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -31,10 +32,7 @@ export default function Topbar() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('auth_token')
-    sessionStorage.removeItem('auth_token')
-    localStorage.removeItem('auth_role')
-    localStorage.removeItem('auth_username')
+    clearAuth()
     navigate('/login')
   }
 

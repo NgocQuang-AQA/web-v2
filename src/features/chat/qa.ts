@@ -1,5 +1,5 @@
 import { statsToday } from '../../data/mock/stats'
-import { apiUrl, apiFetch } from '../../lib/api'
+import { apiJson } from '../../lib/api'
 
 export type StatMetrics = {
   successRate: number
@@ -9,21 +9,14 @@ export type StatMetrics = {
 }
 
 async function fetchJson<T>(url: string): Promise<T | null> {
-  try {
-    const res = await apiFetch(url)
-    if (!res.ok) return null
-    return await res.json()
-  } catch {
-    return null
-  }
+  return apiJson<T>(url)
 }
 
 export async function fetchStats(params?: { from?: string; to?: string }): Promise<StatMetrics> {
   const qs = new URLSearchParams()
   if (params?.from) qs.set('from', params.from)
   if (params?.to) qs.set('to', params.to)
-  const base = apiUrl('/api/reports/stats')
-  const url = qs.toString() ? `${base}?${qs.toString()}` : base
+  const url = qs.toString() ? `/api/reports/stats?${qs.toString()}` : '/api/reports/stats'
   const data = await fetchJson<StatMetrics>(url)
   if (data && typeof data.successRate === 'number') return data
   return statsToday

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import NoData from '../assets/no-data-found_585024-42.avif'
-import { apiFetch } from '../lib/api'
+import { apiFetch, setAuthSession } from '../lib/api'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -35,18 +35,7 @@ export default function Login() {
         const username: string = String(data?.username || '')
         const menus: string[] = Array.isArray(data?.menus) ? data.menus : []
 
-        if (token) {
-          if (remember) {
-            localStorage.setItem('auth_token', token)
-            localStorage.setItem('remember_me_username', username)
-          } else {
-            sessionStorage.setItem('auth_token', token)
-            localStorage.removeItem('remember_me_username')
-          }
-          localStorage.setItem('auth_role', role)
-          localStorage.setItem('auth_username', username)
-          localStorage.setItem('auth_menus', JSON.stringify(menus))
-        }
+        setAuthSession({ token, remember, role, username, menus })
         const go = (() => {
           const r = role.toUpperCase()
           if (r === 'OTHER' || r === 'USER') return '/agents/notes'

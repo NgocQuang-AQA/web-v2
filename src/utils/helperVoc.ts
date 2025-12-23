@@ -52,10 +52,10 @@ export function toLabel(key: string): string {
   const m: Record<string, string> = {
     title: 'Title',
     dt: 'Week',
-    '2': 'Holes only tour (R)',
-    '4': 'Holes only tour (V)',
-    '5': 'Holes only tour (TV)',
-    '6': 'Holes only tour (TVNX)',
+    '2': 'Holes (R)',
+    '4': 'Holes (V)',
+    '5': 'Holes (TV)',
+    '6': 'Holes (TVNX)',
     month: 'Month',
     year: 'Year',
     numberOfUsers: 'Number of Users',
@@ -267,10 +267,10 @@ export function getTourTitle(v: unknown): string {
     code = Number.isNaN(n) ? null : n
   }
   const map: Record<number, string> = {
-    2: 'Holes only tour (R)',
-    4: 'Holes only tour (V)',
-    5: 'Holes only tour (TV)',
-    6: 'Holes only tour (TVNX)'
+    2: 'Holes (R)',
+    4: 'Holes (V)',
+    5: 'Holes (TV)',
+    6: 'Holes (TVNX)'
   }
   if (code != null && map[code]) return map[code]
   if (typeof v === 'string') return v

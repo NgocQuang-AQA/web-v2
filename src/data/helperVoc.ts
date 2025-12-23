@@ -149,8 +149,8 @@ export const tabsPreview: { key: TabKey; label: string; path: string }[] = [
 export const tabsReport: { key: TabKey; label: string; path: string }[] = [
   { key: 'monthly', label: 'Monthly Report', path: '/v1/helper/user/monthly-report' },
   { key: 'weekly', label: 'Weekly Report', path: '/v1/helper/user/weekly-report' },
-  { key: 'preview', label: 'Report Preview', path: '/v1/helper/hole/report' },
-  { key: 'tour', label: 'Tour Report', path: '/v1/helper/hole/tour-report' }
+  { key: 'preview', label: 'All round Holes', path: '/v1/helper/hole/report' },
+  { key: 'tour', label: 'Tour round Holes', path: '/v1/helper/hole/tour-report' }
 ]
 
 export const flagEtcSrc = flagEtc

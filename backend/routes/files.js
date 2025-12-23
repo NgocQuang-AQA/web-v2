@@ -196,3 +196,115 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
 
   return router;
 }
+
+export function createFilesStaticRouter({ filesRepo }) {
+  const router = Router();
+
+  const isDebug = String(process.env.FILES_DEBUG || "").toLowerCase() === "1" || String(process.env.FILES_DEBUG || "").toLowerCase() === "true";
+  const dlog = (...args) => { if (isDebug) console.log("[files-static]", ...args); };
+
+  function toPosix(p) {
+    if (!p) return "";
+    return String(p).replace(/\\/g, "/");
+  }
+
+  function fromWindowsToWsl(p) {
+    const s = toPosix(p);
+    const m = s.match(/^([A-Za-z]):\/(.*)$/);
+    if (!m) return s;
+    const drive = m[1].toLowerCase();
+    return `/mnt/${drive}/${m[2]}`;
+  }
+
+  function replacePrefix(s, fromPrefix, toPrefix) {
+    const src = toPosix(s);
+    const from = toPosix(fromPrefix);
+    const to = toPosix(toPrefix);
+    if (src.startsWith(from)) {
+      const rest = src.slice(from.length);
+      return to + rest;
+    }
+    return src;
+  }
+
+  function resolveDirForCollection(collection, rawDir) {
+    let dir = toPosix(rawDir || "");
+    if (!dir) return "";
+    dir = fromWindowsToWsl(dir);
+    const qaRootEnv = toPosix(process.env.SERENITY_HISTORY_DIR || "");
+    const cnRootEnv = toPosix(process.env.SERENITY_HISTORY_DIR_CN || (qaRootEnv ? qaRootEnv.replace("global-qa", "global-cn") : ""));
+    const col = String(collection || "").toLowerCase();
+    if (col.includes("cn") || col === "cn") {
+      const cnFallback = "/mnt/d/Project/global-cn/report_history";
+      const cnRoot = cnRootEnv || cnFallback;
+      dir = replacePrefix(dir, "/data/global-cn/report_history", cnRoot);
+      dir = replacePrefix(dir, "/data/global-cn-live/report_history", cnRoot);
+    } else if (col.includes("qa") || col.includes("global") || col === "qa") {
+      const qaFallback = "/mnt/d/Project/global-qa/report_history";
+      const qaRoot = qaRootEnv || qaFallback;
+      dir = replacePrefix(dir, "/data/global-qa/report_history", qaRoot);
+      dir = replacePrefix(dir, "/data/global-live/report_history", qaRoot);
+    }
+    return dir;
+  }
+
+  async function pickExistingDir(collection, rawDir) {
+    const candidates = [];
+    const posix = toPosix(rawDir);
+    if (posix) candidates.push(posix);
+    const wsl = fromWindowsToWsl(posix);
+    if (wsl && wsl !== posix) candidates.push(wsl);
+    const mapped = resolveDirForCollection(collection, posix);
+    if (mapped && !candidates.includes(mapped)) candidates.push(mapped);
+    dlog("pickExistingDir", { collection, rawDir: posix, candidates });
+    for (const d of candidates) {
+      try {
+        const ok = fs.existsSync(d);
+        dlog("exists", d, ok);
+        if (ok) return d;
+      } catch {}
+    }
+    return posix;
+  }
+
+  router.get('/:collection/:id/static/*', async (req, res) => {
+    const { collection, id } = req.params;
+    const doc = await filesRepo.findById(collection, id);
+    if (!doc) return res.status(404).json({ message: 'not_found' });
+    const rawDir = doc.path || doc.dir || doc.location || '';
+    dlog("static", { collection, id, rawDir });
+    const dir = await pickExistingDir(collection, rawDir);
+    if (!dir) return res.status(404).json({ message: 'dir_not_found' });
+    const subPath = req.params[0] || 'index.html';
+    const tryDirs = [dir];
+    const altDir1 = resolveDirForCollection(collection, rawDir);
+    if (altDir1 && !tryDirs.includes(altDir1)) tryDirs.push(altDir1);
+    const altDir2 = fromWindowsToWsl(rawDir);
+    if (altDir2 && !tryDirs.includes(altDir2)) tryDirs.push(altDir2);
+    dlog("static-try", { subPath, tryDirs });
+    for (const base of tryDirs) {
+      try {
+        const fullPath = path.resolve(base, subPath);
+        const rel = path.relative(base, fullPath);
+        if (rel.startsWith('..')) {
+          dlog("skip-rel", { base, fullPath, rel });
+          continue;
+        }
+        const ok = fs.existsSync(fullPath);
+        dlog("probe-file", { base, fullPath, ok });
+        if (ok) {
+          return res.sendFile(fullPath, (err) => {
+            if (err) {
+              dlog("sendFile-error", { fullPath, err: String(err) });
+              return res.status(err.statusCode || 500).json({ message: 'file_error' });
+            }
+          });
+        }
+      } catch {}
+    }
+    dlog("not-found", { id, subPath, tried: tryDirs });
+    return res.status(404).json({ message: 'file_error' });
+  });
+
+  return router;
+}
