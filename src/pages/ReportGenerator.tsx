@@ -3,6 +3,8 @@ import AgentSidebar from '../app/AgentSidebar'
 import GlobalQaTable from '../features/reports/GlobalQaTable'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useMemo, useState } from 'react'
+import { apiJson } from '../lib/api'
+type RunResponse = { status?: string; exitCode?: number; notice?: { content?: string } | null }
 
 export default function ReportGenerator() {
   const navigate = useNavigate()
@@ -22,6 +24,10 @@ export default function ReportGenerator() {
 
   const [view, setView] = useState<'global' | 'globalcn'>(initViewParam || deducedFromTab.view)
   const [sub, setSub] = useState<'qa' | 'live' | 'cn'>(initSubParam ? (initViewParam === 'globalcn' && initSubParam === 'live' ? 'cn' : initSubParam) : deducedFromTab.sub)
+  const [running, setRunning] = useState(false)
+  const [alertOpen, setAlertOpen] = useState(false)
+  const [alertMsg, setAlertMsg] = useState<string | null>(null)
+  const [alertHiding, setAlertHiding] = useState(false)
 
   const mainTabs = useMemo(() => {
     return [
@@ -38,6 +44,10 @@ export default function ReportGenerator() {
       if (sub === 'cn') return { collection: 'global-cn-live', detailPathPrefix: '/reports/global-cn-live' }
       return { collection: 'global-cn', detailPathPrefix: '/reports/global-cn' }
     }
+  }, [view, sub])
+  const envParam = useMemo(() => {
+    if (view === 'global') return sub === 'live' ? 'live' : 'qa'
+    return sub === 'cn' ? 'cnlive' : 'cnqa'
   }, [view, sub])
 
   const updateQuery = (patch: Record<string, unknown>) => {
@@ -89,35 +99,83 @@ export default function ReportGenerator() {
               <span className="font-medium">Search</span>
             </button>
           </form>
-          <div className="flex items-center gap-4 border-b border-gray-100 mb-3">
-            {(view === 'global'
-              ? [
-                  { key: 'qa' as const, label: 'QA' },
-                  { key: 'live' as const, label: 'Live' },
-                ]
-              : [
-                  { key: 'qa' as const, label: 'QA' },
-                  { key: 'cn' as const, label: 'CN' },
-                ]
-            ).map((t) => (
-              <button
-                key={t.key}
-                className={`px-3 py-2 text-sm ${sub === t.key ? 'text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600'}`}
-                onClick={() => {
-                  setSub(t.key)
-                  const nextTab =
-                    view === 'global'
-                      ? t.key === 'live' ? 'globallive' : 'global'
-                      : t.key === 'cn' ? 'globalcnlive' : 'globalcn'
-                  updateQuery({ view, sub: t.key, tab: nextTab, page: 1 })
-                }}
-              >
-                {t.label}
-              </button>
-            ))}
+          <div className="flex items-center justify-between border-b border-gray-100 mb-3">
+            <div className="flex items-center gap-4">
+              {(view === 'global'
+                ? [
+                    { key: 'qa' as const, label: 'QA' },
+                    { key: 'live' as const, label: 'Live' },
+                  ]
+                : [
+                    { key: 'qa' as const, label: 'QA' },
+                    { key: 'cn' as const, label: 'CN' },
+                  ]
+              ).map((t) => (
+                <button
+                  key={t.key}
+                  className={`px-3 py-2 text-sm ${sub === t.key ? 'text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600'}`}
+                  onClick={() => {
+                    setSub(t.key)
+                    const nextTab =
+                      view === 'global'
+                        ? t.key === 'live' ? 'globallive' : 'global'
+                        : t.key === 'cn' ? 'globalcnlive' : 'globalcn'
+                    updateQuery({ view, sub: t.key, tab: nextTab, page: 1 })
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className={`inline-flex items-center gap-2 rounded-xl ${running ? 'bg-indigo-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98]'} text-white text-sm px-3 py-2 shadow-soft transition`}
+              disabled={running}
+              onClick={async () => {
+                setRunning(true)
+                const res = await apiJson<RunResponse>(`/api/run?env=${encodeURIComponent(envParam)}`)
+                if (res && res.status === 'ok' && res.notice) {
+                  const msg = String(res.notice.content || '').trim()
+                  setAlertMsg(msg || 'Successfully triggered test run.')
+                  setAlertOpen(true)
+                  setAlertHiding(false)
+                  setTimeout(() => setAlertHiding(true), 3000)
+                  setTimeout(() => { setAlertOpen(false); setAlertHiding(false) }, 3800)
+                } else {
+                  setAlertMsg('Failed to trigger test run.')
+                  setAlertOpen(true)
+                  setAlertHiding(false)
+                  setTimeout(() => setAlertHiding(true), 3000)
+                  setTimeout(() => { setAlertOpen(false); setAlertHiding(false) }, 3800)
+                }
+                setRunning(false)
+              }}
+            >
+              {running ? (
+                <>
+                  <svg className="mr-3 size-5 w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                  </svg>
+                  <span className="font-medium">Processing…</span>
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="mr-1 w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                  </svg>
+                  <span className="font-medium">Run Test</span>
+                </>
+              )}
+            </button>
           </div>
           <GlobalQaTable title={null} embedded showSearch={false} nameOverride={name} collection={current.collection} detailPathPrefix={current.detailPathPrefix} />
         </div>
+        {alertOpen && alertMsg && (
+          <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none shadow-lg alert alert-success ${alertHiding ? 'alert-hide' : ''}`} role="alert">
+            {alertMsg}
+          </div>
+        )}
       </div>
     </AppLayout>
   )

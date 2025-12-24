@@ -15,7 +15,7 @@ export default function Login() {
     e.preventDefault()
     setError(null)
     if (!name || !password) {
-      setError('Vui lòng nhập đầy đủ thông tin')
+      setError('Please complete all fields!')
       return
     }
     const run = async () => {
@@ -27,7 +27,7 @@ export default function Login() {
         })
         const data = await res.json()
         if (!res.ok) {
-          setError(data?.message || 'Đăng nhập thất bại')
+          setError(data?.message || 'Login failed.')
           return
         }
         const token: string = String(data?.token || '')
@@ -44,7 +44,7 @@ export default function Login() {
         })()
         navigate(go)
       } catch {
-        setError('Đăng nhập thất bại')
+        setError('Login failed.')
       }
     }
     run()

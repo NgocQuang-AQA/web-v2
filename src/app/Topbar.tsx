@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ChatBotModal from '../features/chat/ChatBotModal'
+import NotificationsModal from '../features/notices/NotificationsModal'
 import { clearAuth, getAuthUsername } from '../lib/api'
 
 export default function Topbar() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
   
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -73,10 +75,10 @@ export default function Topbar() {
               <p className="text-sm font-medium text-gray-800">{username}</p>
             </div>
             <div className="p-1 space-y-0.5">
-              <a className="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100" href="#">
+              <button className="w-full flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100" onClick={() => { setNotifOpen(true); setIsDropdownOpen(false) }}>
                 <svg className="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
                 Notifications
-              </a>
+              </button>
               <a className="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100" href="#">
                 <svg className="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 Profile
@@ -91,6 +93,7 @@ export default function Topbar() {
       </div>
 
       <ChatBotModal open={open} initialQuestion={query} onClose={() => setOpen(false)} />
+      <NotificationsModal open={notifOpen} onClose={() => setNotifOpen(false)} />
     </div>
   )
 }
