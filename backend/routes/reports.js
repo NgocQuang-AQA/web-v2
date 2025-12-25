@@ -132,15 +132,15 @@ export function createReportsRouter({ reportsRepo, testRunsRepo, filesRepo, scan
   });
 
   router.get("/stats", async (req, res) => {
-    const collections = [
-      { name: "QA", col: "qa-summary" },
-      { name: "CN", col: "cn-summary" },
+    const sources = [
+      { name: "QA", key: "global-qa" },
+      { name: "CN", key: "cn-qa" },
     ];
 
     const results = [];
 
-    for (const { name, col } of collections) {
-      const items = await filesRepo.find(col, { page: 1, pageSize: 1000 });
+    for (const { name, key } of sources) {
+      const items = await filesRepo.find("report-summary", { page: 1, pageSize: 1000, key });
 
       let passed = 0;
       let failed = 0;
@@ -245,19 +245,19 @@ export function createReportsRouter({ reportsRepo, testRunsRepo, filesRepo, scan
       return a ?? b ?? null;
     };
 
-    const getLatest = async (col) => {
+    const getLatest = async (col, key) => {
       try {
-        const items = await filesRepo.find(col, { page: 1, pageSize: 1 });
+        const items = await filesRepo.find(col, { page: 1, pageSize: 1, key });
         return items[0] || null;
       } catch {
         return null;
       }
     };
 
-    const qaErrorDoc = await getLatest("qa-error");
-    const cnErrorDoc = await getLatest("cn-error");
-    const qaFailDoc = await getLatest("qa-fail");
-    const cnFailDoc = await getLatest("cn-fail");
+    const qaErrorDoc = await getLatest("report-error", "global-qa");
+    const cnErrorDoc = await getLatest("report-error", "cn-qa");
+    const qaFailDoc = await getLatest("report-fail", "global-qa");
+    const cnFailDoc = await getLatest("report-fail", "cn-qa");
 
     const totalError = toNum(qaErrorDoc?.totalError) + toNum(cnErrorDoc?.totalError);
     const totalFail = toNum(qaFailDoc?.totalFail) + toNum(cnFailDoc?.totalFail);

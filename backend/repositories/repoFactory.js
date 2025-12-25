@@ -410,8 +410,8 @@ class FilesRepoMemory {
     return this.store.get(collection);
   }
   async count(collection, filter = {}) {
-    const { from, to, name } = filter || {};
-    if (!from && !to && !name) return this.list(collection).length;
+    const { from, to, name, key } = filter || {};
+    if (!from && !to && !name && !key) return this.list(collection).length;
     const fromD = from ? new Date(from) : null;
     const toD = to ? new Date(to) : null;
     const nameLower = typeof name === "string" && name ? String(name).toLowerCase() : "";
@@ -432,10 +432,13 @@ class FilesRepoMemory {
         const n = String(i.name || "").toLowerCase();
         if (!n.includes(nameLower)) return false;
       }
+      if (key) {
+        if (String(i.key || "") !== String(key)) return false;
+      }
       return true;
     }).length;
   }
-  async find(collection, { page = 1, pageSize = 20, from, to, sortBy = "time_insert", order = "desc", name } = {}) {
+  async find(collection, { page = 1, pageSize = 20, from, to, sortBy = "time_insert", order = "desc", name, key } = {}) {
     const fromD = from ? new Date(from) : null;
     const toD = to ? new Date(to) : null;
     const dir = String(order).toLowerCase() === "asc" ? 1 : -1;
@@ -456,13 +459,16 @@ class FilesRepoMemory {
     };
     const list = this.list(collection).slice().filter((i) => {
       const ms = getMs(i.time_insert);
-      if (!fromD && !toD && !nameLower) return true;
+      if (!fromD && !toD && !nameLower && !key) return true;
       if (ms == null && (fromD || toD)) return false;
       if (fromD && ms < fromD.getTime()) return false;
       if (toD && ms > toD.getTime()) return false;
       if (nameLower) {
         const n = String(i.name || "").toLowerCase();
         if (!n.includes(nameLower)) return false;
+      }
+      if (key) {
+        if (String(i.key || "") !== String(key)) return false;
       }
       return true;
     });

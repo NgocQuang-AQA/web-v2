@@ -9,7 +9,13 @@ function findScriptCandidates(env) {
   const scriptsDir1 = path.resolve(root, "..", "scripts");
   const scriptsDir2 = path.resolve(root, "scripts");
   const isDarwin = process.platform === "darwin";
-  const name = env === "qa" ? (isDarwin ? "run-qa-macos.sh" : "run-qa.sh") : null;
+  const map = {
+    qa: isDarwin ? "run-qa-macos.sh" : "run-qa.sh",
+    live: isDarwin ? "run-live-macos.sh" : "run-live.sh",
+    cnqa: isDarwin ? "run-cn-qa-macos.sh" : "run-cn-qa.sh",
+    cnlive: isDarwin ? "run-cn-live-macos.sh" : "run-cn-live.sh",
+  };
+  const name = map[String(env).toLowerCase()] || null;
   if (!name) return [];
   return [
     path.resolve(scriptsDir1, name),
@@ -66,11 +72,10 @@ export function createRunRouter() {
     try {
       const env = String(req.query.env || "").trim();
       if (!env) return res.status(400).json({ message: "missing_env" });
-      if (env !== "qa") return res.status(400).json({ message: "env_not_supported" });
 
       const candidates = findScriptCandidates(env);
       const scriptPath = pickExistingPath(candidates);
-      if (!scriptPath) return res.status(404).json({ message: "script_not_found", candidates });
+      if (!scriptPath) return res.status(404).json({ message: "script_not_found", candidates, env });
 
       const { code, logs } = await runScript(scriptPath);
       const namepath = parseNamepathFromLogs(logs);

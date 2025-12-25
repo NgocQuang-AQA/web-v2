@@ -14,6 +14,7 @@ type Props = {
   embedded?: boolean
   showSearch?: boolean
   nameOverride?: string
+  reloadEpoch?: number
 }
 
 const StopIcon = ({ className }: { className?: string }) => (
@@ -32,7 +33,7 @@ const ChevronUpIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
-export default function GlobalQaTable({ title = 'Report Generator', collection = 'global-qa', detailPathPrefix = '/reports/global', embedded = false, showSearch = true, nameOverride }: Props) {
+export default function GlobalQaTable({ title = 'Report Generator', collection = 'global-qa', detailPathPrefix = '/reports/global', embedded = false, showSearch = true, nameOverride, reloadEpoch = 0 }: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const [items, setItems] = useState<AnyRecord[]>([])
@@ -85,7 +86,7 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
     return () => {
       canceled = true
     }
-  }, [collection, page, pageSize, sortBy, order, effectiveName])
+  }, [collection, page, pageSize, sortBy, order, effectiveName, reloadEpoch])
 
   const displayKeys = (() => {
     const first = items[0] || {}

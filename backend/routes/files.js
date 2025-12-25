@@ -53,6 +53,13 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
     return dir;
   }
 
+  function normalizeCollectionName(name) {
+    const s = String(name || "").toLowerCase();
+    if (s === "global-cn") return "cn-qa";
+    if (s === "global-cn-live") return "cn-live";
+    return name;
+  }
+
   async function pickExistingDir(collection, rawDir) {
     const candidates = [];
     const posix = toPosix(rawDir);
@@ -75,7 +82,9 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
   router.get('/latest-summary', async (req, res) => {
     const collections = [
       { key: 'qa', col: 'global-qa' },
-      { key: 'cn', col: 'global-cn' },
+      { key: 'cn', col: 'cn-qa' },
+      { key: 'live', col: 'global-live' },
+      { key: 'cn-live', col: 'cn-live' },
     ];
     const result = {};
     for (const { key, col } of collections) {
@@ -95,10 +104,6 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
 
   router.get('/:collection', async (req, res) => {
     const { page = 1, pageSize = 20, sortBy = 'time_insert', order = 'desc', name = '' } = req.query;
-    // Support multiple param formats:
-    // - Legacy: from/to (ISO)
-    // - Alias: startTime/endTime (ISO)
-    // - New: timeStart/timeEnd (dd-mm-yyyy, local date)
     const parseDMY = (s) => {
       if (!s || typeof s !== 'string') return null;
       const parts = s.split('-');
@@ -116,7 +121,8 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
     const toDMY = endD ? endOfDay(endD).toISOString() : '';
     const from = req.query.from || req.query.startTime || fromDMY || '';
     const to = req.query.to || req.query.endTime || toDMY || '';
-    const collection = req.params.collection;
+    const collectionRaw = req.params.collection;
+    const collection = normalizeCollectionName(collectionRaw);
     const options = { page, pageSize, from, to, sortBy, order, name };
     const total = await filesRepo.count(collection, { from, to, name });
     const items = await filesRepo.find(collection, options);
@@ -124,7 +130,8 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
   });
 
   router.get('/:collection/latest-summary', async (req, res) => {
-    const { collection } = req.params;
+    const { collection: collectionRaw } = req.params;
+    const collection = normalizeCollectionName(collectionRaw);
     const items = await filesRepo.find(collection, { page: 1, pageSize: 1 });
     const latest = items[0] || null;
     if (!latest) return res.json({ latest: null, summary: null });
@@ -137,14 +144,16 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
   });
 
   router.get('/:collection/:id', async (req, res) => {
-    const { collection, id } = req.params;
+    const { collection: collectionRaw, id } = req.params;
+    const collection = normalizeCollectionName(collectionRaw);
     const doc = await filesRepo.findById(collection, id);
     if (!doc) return res.status(404).json({ message: 'not_found' });
     res.json(doc);
   });
 
   router.get('/:collection/:id/latest-summary', async (req, res) => {
-    const { collection, id } = req.params;
+    const { collection: collectionRaw, id } = req.params;
+    const collection = normalizeCollectionName(collectionRaw);
     const doc = await filesRepo.findById(collection, id);
     if (!doc) return res.status(404).json({ message: 'not_found' });
     const rawDir = doc.path || doc.dir || doc.location || '';
@@ -152,11 +161,12 @@ export function createFilesRouter({ filesRepo, summarizeDir }) {
     const dir = await pickExistingDir(collection, rawDir);
     if (!dir) return res.json({ latest: doc, summary: null });
     const summary = summarizeDir ? await summarizeDir(dir) : null;
-    res.json({ latest: doc, summary });
+    res.json({ latest, summary });
   });
 
   router.get('/:collection/:id/static/*', async (req, res) => {
-    const { collection, id } = req.params;
+    const { collection: collectionRaw, id } = req.params;
+    const collection = normalizeCollectionName(collectionRaw);
     const doc = await filesRepo.findById(collection, id);
     if (!doc) return res.status(404).json({ message: 'not_found' });
     const rawDir = doc.path || doc.dir || doc.location || '';
@@ -248,6 +258,13 @@ export function createFilesStaticRouter({ filesRepo }) {
     return dir;
   }
 
+  function normalizeCollectionName(name) {
+    const s = String(name || "").toLowerCase();
+    if (s === "global-cn") return "cn-qa";
+    if (s === "global-cn-live") return "cn-live";
+    return name;
+  }
+
   async function pickExistingDir(collection, rawDir) {
     const candidates = [];
     const posix = toPosix(rawDir);
@@ -268,7 +285,8 @@ export function createFilesStaticRouter({ filesRepo }) {
   }
 
   router.get('/:collection/:id/static/*', async (req, res) => {
-    const { collection, id } = req.params;
+    const { collection: collectionRaw, id } = req.params;
+    const collection = normalizeCollectionName(collectionRaw);
     const doc = await filesRepo.findById(collection, id);
     if (!doc) return res.status(404).json({ message: 'not_found' });
     const rawDir = doc.path || doc.dir || doc.location || '';

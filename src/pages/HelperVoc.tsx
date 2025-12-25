@@ -19,7 +19,7 @@ export default function HelperVoc() {
   const location = useLocation()
   const navigate = useNavigate()
   const initParams = new URLSearchParams(window.location.search)
-  const initEnv = (initParams.get('env') as Env) || 'DEV'
+  const initEnv = (initParams.get('env') as Env) || 'LIVE'
   const initVocId = initParams.get('vocId') || ''
   const initSearchBy = (initParams.get('searchBy') as 'vocId' | 'userNo') || 'vocId'
   const initTab = (initParams.get('tab') as TabKey) || 'gdr'

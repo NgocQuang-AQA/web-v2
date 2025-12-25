@@ -12,9 +12,9 @@ export default function GlobalReportDetail() {
   const location = useLocation()
   const collection = (() => {
     const p = location.pathname
-    if (p.startsWith('/reports/global-cn-live/')) return 'global-cn-live'
+    if (p.startsWith('/reports/global-cn-live/')) return 'cn-live'
     if (p.startsWith('/reports/global-live/')) return 'global-live'
-    if (p.startsWith('/reports/global-cn/')) return 'global-cn'
+    if (p.startsWith('/reports/global-cn/')) return 'cn-qa'
     return 'global-qa'
   })()
   const [doc, setDoc] = useState<Doc | null>(null)
@@ -52,8 +52,8 @@ export default function GlobalReportDetail() {
 
   const src = id ? apiUrl(`/api/files/${collection}/${id}/static/index.html`) : ''
   const fallbackTitle = (() => {
-    if (collection === 'global-cn') return 'GlobalCN QA Report'
-    if (collection === 'global-cn-live') return 'GlobalCN Live Report'
+    if (collection === 'cn-qa') return 'GlobalCN QA Report'
+    if (collection === 'cn-live') return 'GlobalCN Live Report'
     if (collection === 'global-live') return 'Global Live Report'
     return 'Global QA Report'
   })()

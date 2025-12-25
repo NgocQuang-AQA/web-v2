@@ -274,44 +274,28 @@ async function summarizeDir(dir) {
     }
     total = counts.passed + counts.failed + counts.broken + counts.skipped;
     if (indexHtmlText) {
-      const labelRe = /labels\s*:\s*\[\s*"(?:Success|Passing)"\s*,\s*"(?:Failure|Failed)"\s*,\s*"Broken"\s*,\s*"Skipped"\s*\][\s\S]*?data\s*:\s*\[(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\]/i;
-      const m1 = indexHtmlText.match(labelRe);
-      if (m1) {
-        const p = Number(m1[1] || 0);
-        const f = Number(m1[2] || 0);
-        const b = Number(m1[3] || 0);
-        const s = Number(m1[4] || 0);
-        counts.passed = p;
-        counts.failed = f;
-        counts.broken = b;
-        counts.skipped = s;
-        total = p + f + b + s;
-        usedIndexCounts = true;
-      } else {
-        const nearSeverityIdx = indexHtmlText.indexOf('id="severityChart"');
-        const nearResultIdx = indexHtmlText.indexOf('id="resultChart"');
-        const startIdx = nearSeverityIdx >= 0 ? nearSeverityIdx : nearResultIdx;
-        if (startIdx >= 0) {
-          const windowText = indexHtmlText.slice(startIdx, Math.min(indexHtmlText.length, startIdx + 20000));
-          const dataRe = /data\s*:\s*\[(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\]/i;
-          const m2 = windowText.match(dataRe);
-          if (m2) {
-            const p = Number(m2[1] || 0);
-            const f = Number(m2[2] || 0);
-            const b = Number(m2[3] || 0);
-            const s = Number(m2[4] || 0);
-            counts.passed = p;
-            counts.failed = f;
-            counts.broken = b;
-            counts.skipped = s;
-            total = p + f + b + s;
-            usedIndexCounts = true;
-          }
+      const nearResultIdx = indexHtmlText.indexOf('id="resultChart"');
+      if (nearResultIdx >= 0) {
+        const windowText = indexHtmlText.slice(nearResultIdx, Math.min(indexHtmlText.length, nearResultIdx + 20000));
+        const dataRe = /data\s*:\s*\[(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\]/i;
+        const m2 = windowText.match(dataRe);
+        if (m2) {
+          const p = Number(m2[1] || 0);
+          const f = Number(m2[2] || 0);
+          const b = Number(m2[3] || 0);
+          const s = Number(m2[4] || 0);
+          counts.passed = p;
+          counts.failed = f;
+          counts.broken = b;
+          counts.skipped = s;
+          total = p + f + b + s;
+          usedIndexCounts = true;
         }
+      }
         let pSum = 0, fSum = 0, eSum = 0;
         const tableRe = /<table[^>]*id=\"Feature\"[^>]*>([\s\S]*?)<\/table>/i;
         const tMatch = indexHtmlText.match(tableRe);
-        if (tMatch) {
+        if (!usedIndexCounts && tMatch) {
           const featureText = tMatch[1];
           const rowRe = /<tr[\s\S]*?>[\s\S]*?<\/tr>/g;
           let rm;
@@ -344,7 +328,7 @@ async function summarizeDir(dir) {
             }
           }
         }
-        if (pSum + fSum + eSum > 0) {
+        if (!usedIndexCounts && (pSum + fSum + eSum > 0)) {
           counts.passed = pSum;
           counts.failed = fSum;
           counts.broken = eSum;
@@ -362,7 +346,6 @@ async function summarizeDir(dir) {
             dlog("total-mismatch", { parsedTotal, total, counts });
           }
         }
-      }
     }
     const percent = total ? Math.round((counts.passed / total) * 100) : 0;
     dlog("summary", { counts, total, percent });

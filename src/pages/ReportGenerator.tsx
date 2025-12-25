@@ -28,6 +28,7 @@ export default function ReportGenerator() {
   const [alertOpen, setAlertOpen] = useState(false)
   const [alertMsg, setAlertMsg] = useState<string | null>(null)
   const [alertHiding, setAlertHiding] = useState(false)
+  const [reloadEpoch, setReloadEpoch] = useState(0)
 
   const mainTabs = useMemo(() => {
     return [
@@ -41,8 +42,8 @@ export default function ReportGenerator() {
       if (sub === 'live') return { collection: 'global-live', detailPathPrefix: '/reports/global-live' }
       return { collection: 'global-qa', detailPathPrefix: '/reports/global' }
     } else {
-      if (sub === 'cn') return { collection: 'global-cn-live', detailPathPrefix: '/reports/global-cn-live' }
-      return { collection: 'global-cn', detailPathPrefix: '/reports/global-cn' }
+      if (sub === 'cn') return { collection: 'cn-live', detailPathPrefix: '/reports/global-cn-live' }
+      return { collection: 'cn-qa', detailPathPrefix: '/reports/global-cn' }
     }
   }, [view, sub])
   const envParam = useMemo(() => {
@@ -108,7 +109,7 @@ export default function ReportGenerator() {
                   ]
                 : [
                     { key: 'qa' as const, label: 'QA' },
-                    { key: 'cn' as const, label: 'CN' },
+                    { key: 'cn' as const, label: 'Live' },
                   ]
               ).map((t) => (
                 <button
@@ -148,6 +149,7 @@ export default function ReportGenerator() {
                   setTimeout(() => setAlertHiding(true), 3000)
                   setTimeout(() => { setAlertOpen(false); setAlertHiding(false) }, 3800)
                 }
+                setReloadEpoch((x) => x + 1)
                 setRunning(false)
               }}
             >
@@ -169,7 +171,7 @@ export default function ReportGenerator() {
               )}
             </button>
           </div>
-          <GlobalQaTable title={null} embedded showSearch={false} nameOverride={name} collection={current.collection} detailPathPrefix={current.detailPathPrefix} />
+          <GlobalQaTable title={null} embedded showSearch={false} nameOverride={name} collection={current.collection} detailPathPrefix={current.detailPathPrefix} reloadEpoch={reloadEpoch} />
         </div>
         {alertOpen && alertMsg && (
           <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none shadow-lg alert alert-success ${alertHiding ? 'alert-hide' : ''}`} role="alert">
