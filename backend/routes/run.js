@@ -9,11 +9,12 @@ function findScriptCandidates(env) {
   const scriptsDir1 = path.resolve(root, "..", "scripts");
   const scriptsDir2 = path.resolve(root, "scripts");
   const isDarwin = process.platform === "darwin";
+  const isWin = process.platform === "win32";
   const map = {
-    qa: isDarwin ? "run-qa-macos.sh" : "run-qa.sh",
-    live: isDarwin ? "run-live-macos.sh" : "run-live.sh",
-    cnqa: isDarwin ? "run-cn-qa-macos.sh" : "run-cn-qa.sh",
-    cnlive: isDarwin ? "run-cn-live-macos.sh" : "run-cn-live.sh",
+    qa: isDarwin ? "run-qa-macos.sh" : isWin ? "run-qa.bat" : "run-qa.sh",
+    live: isDarwin ? "run-live-macos.sh" : isWin ? "run-live.bat" : "run-live.sh",
+    cnqa: isDarwin ? "run-cn-qa-macos.sh" : isWin ? "run-cn-qa.bat" : "run-cn-qa.sh",
+    cnlive: isDarwin ? "run-cn-live-macos.sh" : isWin ? "run-cn-live.bat" : "run-cn-live.sh",
   };
   const name = map[String(env).toLowerCase()] || null;
   if (!name) return [];
@@ -54,8 +55,9 @@ function composeNoticeContent(env, namepath) {
 
 async function runScript(scriptPath) {
   return new Promise((resolve) => {
-    const runner = "bash";
-    const args = [scriptPath];
+    const isBat = scriptPath.toLowerCase().endsWith(".bat") || scriptPath.toLowerCase().endsWith(".cmd");
+    const runner = isBat && process.platform === "win32" ? "cmd.exe" : "bash";
+    const args = isBat && process.platform === "win32" ? ["/c", scriptPath] : [scriptPath];
     const child = spawn(runner, args, { cwd: path.dirname(scriptPath) });
     let logs = "";
     child.stdout.on("data", (d) => { logs += d.toString(); });
