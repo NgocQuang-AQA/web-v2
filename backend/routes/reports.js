@@ -133,8 +133,10 @@ export function createReportsRouter({ reportsRepo, testRunsRepo, filesRepo, scan
 
   router.get("/stats", async (req, res) => {
     const sources = [
-      { name: "QA", key: "global-qa" },
-      { name: "CN", key: "cn-qa" },
+      { name: "CN-LIVE", key: "cn-live" },
+      { name: "CN-QA", key: "cn-qa" },
+      { name: "GLOBAL-QA", key: "global-qa" },
+      { name: "GLOBAL-LIVE", key: "global-live" },
     ];
 
     const results = [];

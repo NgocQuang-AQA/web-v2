@@ -1,7 +1,7 @@
 import type { Env, TabKey } from '../../models/helperVoc'
 import Loading from '../../components/Loading'
 import NoData from '../../assets/no-data-found_585024-42.avif'
-import { formatCell, formatDate, getModeName, shouldHighlightMode, getSoftwareName, getDifficultyName, getUnitName, getClubName, getBallName, getIsTournamentLabel, toLabel, getSwingVideoUrls, getTourTitle } from '../../utils/helperVoc'
+import { formatCell, formatDate, getModeName, shouldHighlightMode, getSoftwareName, getDifficultyName, getUnitName, getClubName, getBallName, getIsTournamentLabel, toLabel, getSwingVideoUrls, getTourTitle, getSystemName } from '../../utils/helperVoc'
 
 type Props = {
   rows: Record<string, unknown>[]
@@ -50,7 +50,9 @@ export default function RecordsTable({ rows, cols, env, tab, page, size, loading
                         })()
                       : getModeName(row as Record<string, unknown>)
                     : k === 'pr_istournament'
-                    ? getIsTournamentLabel((row as Record<string, unknown>)[k])
+                  ? getIsTournamentLabel((row as Record<string, unknown>)[k])
+                    : k === 'systemName'
+                    ? getSystemName(row as Record<string, unknown>)
                     : k === 'tm_time_start' ||
                       k === 'tm_time_end' ||
                       k === 'timeStart' ||

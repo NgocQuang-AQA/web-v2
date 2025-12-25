@@ -38,7 +38,7 @@ export default function ChatBotModal({ open, initialQuestion, onClose }: Props) 
   }
 
   return (
-    <Modal open={open} title="Chatbot QA" onClose={onClose}>
+    <Modal open={open} title="Chatbot QA" onClose={onClose} unmountOnClose>
       <div className="space-y-3">
         {messages.map((m, idx) => (
           <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>

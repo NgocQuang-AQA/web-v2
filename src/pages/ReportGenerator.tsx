@@ -25,10 +25,17 @@ export default function ReportGenerator() {
   const [view, setView] = useState<'global' | 'globalcn'>(initViewParam || deducedFromTab.view)
   const [sub, setSub] = useState<'qa' | 'live' | 'cn'>(initSubParam ? (initViewParam === 'globalcn' && initSubParam === 'live' ? 'cn' : initSubParam) : deducedFromTab.sub)
   const [running, setRunning] = useState(false)
-  const [alertOpen, setAlertOpen] = useState(false)
-  const [alertMsg, setAlertMsg] = useState<string | null>(null)
-  const [alertHiding, setAlertHiding] = useState(false)
   const [reloadEpoch, setReloadEpoch] = useState(0)
+
+  const storageKey = 'sdet-run-flags'
+  const setFlag = (env: string, running: boolean) => {
+    try {
+      const s = localStorage.getItem(storageKey)
+      const obj = s ? JSON.parse(s) as Record<string, boolean> : {}
+      const next = { ...obj, [env]: running }
+      localStorage.setItem(storageKey, JSON.stringify(next))
+    } catch { void 0 }
+  }
 
   const mainTabs = useMemo(() => {
     return [
@@ -134,23 +141,21 @@ export default function ReportGenerator() {
               disabled={running}
               onClick={async () => {
                 setRunning(true)
+                setFlag(envParam, true)
                 const res = await apiJson<RunResponse>(`/api/run?env=${encodeURIComponent(envParam)}`)
                 if (res && res.status === 'ok' && res.notice) {
                   const msg = String(res.notice.content || '').trim()
-                  setAlertMsg(msg || 'Successfully triggered test run.')
-                  setAlertOpen(true)
-                  setAlertHiding(false)
-                  setTimeout(() => setAlertHiding(true), 3000)
-                  setTimeout(() => { setAlertOpen(false); setAlertHiding(false) }, 3800)
+                  window.dispatchEvent(new CustomEvent('global:alert', { detail: { message: msg || 'Successfully triggered test run.' } }))
                 } else {
-                  setAlertMsg('Failed to trigger test run.')
-                  setAlertOpen(true)
-                  setAlertHiding(false)
-                  setTimeout(() => setAlertHiding(true), 3000)
-                  setTimeout(() => { setAlertOpen(false); setAlertHiding(false) }, 3800)
+                  window.dispatchEvent(new CustomEvent('global:alert', { detail: { message: 'Failed to trigger test run.' } }))
+                }
+                const stats = await apiJson<unknown>('/api/reports/stats')
+                if (stats != null) {
+                  window.dispatchEvent(new CustomEvent('global:stats', { detail: { data: stats } }))
                 }
                 setReloadEpoch((x) => x + 1)
                 setRunning(false)
+                setFlag(envParam, false)
               }}
             >
               {running ? (
@@ -173,11 +178,7 @@ export default function ReportGenerator() {
           </div>
           <GlobalQaTable title={null} embedded showSearch={false} nameOverride={name} collection={current.collection} detailPathPrefix={current.detailPathPrefix} reloadEpoch={reloadEpoch} />
         </div>
-        {alertOpen && alertMsg && (
-          <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none shadow-lg alert alert-success ${alertHiding ? 'alert-hide' : ''}`} role="alert">
-            {alertMsg}
-          </div>
-        )}
+        
       </div>
     </AppLayout>
   )

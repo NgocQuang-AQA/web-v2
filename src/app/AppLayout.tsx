@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import Topbar from './Topbar'
+import GlobalAlert from './GlobalAlert'
 
 type Props = { sidebar: ReactNode; children: ReactNode }
 
@@ -10,6 +11,7 @@ export default function AppLayout({ sidebar, children }: Props) {
         <aside className="h-full">{sidebar}</aside>
         <main className="h-full">
           <Topbar />
+          <GlobalAlert />
           {children}
         </main>
       </div>

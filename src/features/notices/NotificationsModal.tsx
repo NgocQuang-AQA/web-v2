@@ -51,7 +51,7 @@ export default function NotificationsModal({ open, onClose }: Props) {
   const hasData = useMemo(() => items.length > 0, [items])
 
   return (
-    <Modal open={open} title="Notifications" onClose={onClose}>
+    <Modal open={open} title="Notifications" onClose={onClose} unmountOnClose={false}>
       {loading ? (
         <div className="py-2">
           <div className="w-full h-full min-h-24 rounded-md border border-blue-300 p-4">

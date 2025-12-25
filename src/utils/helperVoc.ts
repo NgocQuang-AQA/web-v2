@@ -50,6 +50,7 @@ export function extractRows(json: unknown): { rows: Record<string, unknown>[]; t
 
 export function toLabel(key: string): string {
   const m: Record<string, string> = {
+    systemName: 'System Name',
     title: 'Title',
     dt: 'Week',
     '2': 'Holes (R)',
@@ -202,6 +203,18 @@ export function shouldHighlightMode(row: Record<string, unknown>): boolean {
   }
   if (n == null) return true
   return !highlightModeIds.has(n)
+}
+
+export function getSystemName(row: Record<string, unknown>): string {
+  const v = (row as Record<string, unknown>).mode_id ?? (row as Record<string, unknown>).modeId ?? (row as Record<string, unknown>).pg_mode
+  let n: number | null = null
+  if (typeof v === 'number') n = v
+  else if (typeof v === 'string') {
+    const num = Number(v)
+    n = Number.isNaN(num) ? null : num
+  }
+  if (n != null && n >= 130 && n < 140) return 'GDR Max'
+  return 'GDR'
 }
 
 export function getSoftwareName(v: unknown): string {

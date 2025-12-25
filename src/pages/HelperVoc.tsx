@@ -12,9 +12,6 @@ import RecordsTable from '../features/helpervoc/RecordsTable'
 import Pagination from '../features/helpervoc/Pagination'
 import { fetchJson, extractRows } from '../utils/helperVoc'
 
- 
- 
-
 export default function HelperVoc() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -226,7 +223,7 @@ export default function HelperVoc() {
       return reordered
     }
     if (active === 'gdr') {
-      const preferred = ['tm_tlcode', 'tm_code', 'mode_id', 'modeName', 'tm_time_start', 'tm_time_end']
+      const preferred = ['tm_tlcode', 'tm_code', 'mode_id', 'modeName', 'systemName', 'tm_time_start', 'tm_time_end']
       return preferred
     } else if (active === 'gs') {
       const preferred = [
