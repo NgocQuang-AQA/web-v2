@@ -13,6 +13,7 @@ import { createAdminRouter } from "./routes/admin.js";
 import { createAuthMiddleware, roles } from "./middleware/auth.js";
 import { createRunRouter } from "./routes/run.js";
 import { createNoticesRouter } from "./routes/notices.js";
+import { createTestsRouter } from "./routes/tests.js";
 
 const envCandidates = [
   path.resolve(process.cwd(), ".env"),
@@ -49,6 +50,7 @@ app.use("/api/files", requireAuth([roles.admin, roles.ba, roles.be, roles.user])
 app.use("/api/chat", requireAuth([roles.admin, roles.ba, roles.be]), createChatRouter({ filesRepo, reportsRepo }));
 app.use("/api/run", requireAuth([roles.admin, roles.be]), createRunRouter());
 app.use("/api/notices", requireAuth([roles.admin, roles.ba, roles.be]), createNoticesRouter());
+app.use("/api/tests", createTestsRouter({ filesRepo }));
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
