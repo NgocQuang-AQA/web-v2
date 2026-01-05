@@ -3,6 +3,7 @@ import AgentSidebar from '../app/AgentSidebar'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useMemo, useState, useEffect } from 'react'
 import { apiJson } from '../lib/api'
+import { sendLog } from '../lib/logger'
 import Loading from '../components/Loading'
 import NoData from '../assets/no-data-found_585024-42.avif'
 type RunResponse = { status?: string; exitCode?: number; notice?: { content?: string } | null }
@@ -41,8 +42,9 @@ export default function ReportGenerator() {
   const [stepsLoading, setStepsLoading] = useState(false)
   const [stepsError, setStepsError] = useState<string | null>(null)
   const [stepsItems, setStepsItems] = useState<Record<string, unknown>[]>([])
-  const [stepExpanded, setStepExpanded] = useState<Record<string, boolean>>({})
+  const [stepExpanded, setStepExpanded] = useState<Record<string, string | null>>({})
   const [selectedCaseName, setSelectedCaseName] = useState<string>('')
+  const [copiedAlertOpen, setCopiedAlertOpen] = useState(false)
   const statusIcon = (s: 'passed' | 'failed' | 'broken' | 'partial' | 'unknown' | 'error') => {
     if (s === 'passed') return (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-green-600">
@@ -139,6 +141,7 @@ export default function ReportGenerator() {
     const rid = String(selectedRunId || initRunId || '')
     const tcId = String((testCase as Record<string, unknown>)?.testCaseId || (testCase as Record<string, unknown>)?.id || (testCase as Record<string, unknown>)?._id || '')
     if (!rid || !tcId) return
+    sendLog({ level: 'info', message: 'Open steps for case', source: 'ReportGenerator', meta: { runId: rid, testCaseId: tcId } })
     setSelectedCaseName(String(testCase.name || ''))
     setStepsOpen(true)
     setStepsLoading(true)
@@ -205,6 +208,9 @@ export default function ReportGenerator() {
       setCasesLoading(true)
       setCasesError(null)
       setExpanded({})
+      
+      sendLog({ level: 'info', message: 'Loading cases tree', source: 'ReportGenerator', meta: { runId: initRunId } })
+
       const qs = new URLSearchParams({ runId: String(initRunId) })
       const data = await apiJson<{ total?: number; items?: Record<string, unknown> }>(`/api/tests/cases?${qs.toString()}`)
       if (!canceled) {
@@ -229,6 +235,94 @@ export default function ReportGenerator() {
 
   const initName = initParams.get('name') || ''
   const [name, setName] = useState(initName)
+
+  const parseHeaderString = (s: unknown) => {
+    const raw = String(s == null ? '' : s)
+    const lines = raw.split(/\r?\n/).map(ln => String(ln || '').trim()).filter(Boolean)
+    const pairs: [string, string][] = []
+    for (const ln of lines) {
+      const cleaned = ln.replace(/\t+/g, '').trim()
+      if (!cleaned) continue
+      const idx = cleaned.indexOf('=')
+      if (idx <= 0) continue
+      const key = cleaned.slice(0, idx).trim()
+      const value = cleaned.slice(idx + 1).trim()
+      if (key) pairs.push([key, value])
+    }
+    return pairs
+  }
+  const safeQuote = (s: unknown) => {
+    const raw = String(s == null ? '' : s)
+    const esc = raw.replace(/'/g, `'"'"'`)
+    return `'${esc}'`
+  }
+  const coerceTypes = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(coerceTypes)
+    if (v && typeof v === 'object') {
+      const out: Record<string, unknown> = {}
+      Object.entries(v as Record<string, unknown>).forEach(([k, val]) => { out[k] = coerceTypes(val) })
+      return out
+    }
+    if (typeof v === 'string') {
+      const s = v.trim()
+      if (/^-?\d+(\.\d+)?$/.test(s)) {
+        const num = Number(s)
+        if (!Number.isNaN(num)) return num
+      }
+      return v
+    }
+    return v
+  }
+  const buildCurl = (reqObj: Record<string, unknown> | null | undefined) => {
+    if (!reqObj || typeof reqObj !== 'object') return ''
+    const method = (String(reqObj.method || '').toUpperCase() || 'GET')
+    const url = String(reqObj.url || '').trim()
+    const content = String(reqObj.content || '').trim()
+    const contentType = String(reqObj.contentType || '').trim()
+    const headerStr = String(reqObj.requestHeaders || '')
+    const headers = parseHeaderString(headerStr)
+    const headerMap = new Map<string, string>(headers)
+    if (contentType && !headerMap.has('Content-Type')) headerMap.set('Content-Type', contentType)
+    let normalizedCompact = content
+    try {
+      const parsed = JSON.parse(content)
+      const coerced = coerceTypes(parsed)
+      normalizedCompact = JSON.stringify(coerced)
+    } catch { void 0 }
+    const parts: string[] = []
+    parts.push(`curl --location ${safeQuote(url)}`)
+    if (method && method !== 'GET') parts.push(`--request ${safeQuote(method)}`)
+    for (const [k, v] of headerMap.entries()) {
+      parts.push(`--header ${safeQuote(`${k}: ${v}`)}`)
+    }
+    if (normalizedCompact) {
+      parts.push(`--data ${safeQuote(normalizedCompact)}`)
+    }
+    return parts.join(' ')
+  }
+  const copyCurl = async (text: string) => {
+    const val = String(text || '')
+    if (!val) return
+    try {
+      await navigator.clipboard.writeText(val)
+      setCopiedAlertOpen(true)
+      setTimeout(() => setCopiedAlertOpen(false), 1500)
+    } catch {
+      try {
+        const ta = document.createElement('textarea')
+        ta.value = val
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.focus()
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+        setCopiedAlertOpen(true)
+        setTimeout(() => setCopiedAlertOpen(false), 1500)
+      } catch { void 0 }
+    }
+  }
 
   return (
     <AppLayout sidebar={<AgentSidebar />}>
@@ -523,6 +617,11 @@ export default function ReportGenerator() {
         </div>
         {stepsOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            {copiedAlertOpen && (
+              <div className="fixed top-6 right-6 z-[60] rounded-xl bg-green-50 text-green-800 px-3 py-2 text-sm shadow-soft border border-green-100">
+                Copied curl successfully!!!
+              </div>
+            )}
             <div className="w-[900px] max-w-[95vw] rounded-2xl bg-white shadow-soft">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
                 <div className="font-semibold">Steps</div>
@@ -549,36 +648,87 @@ export default function ReportGenerator() {
                       {stepsItems.map((it, idx) => {
                         const r = it as Record<string, unknown>
                         const id = String(r.id || r._id || `${idx}`)
-                        const isOpen = !!stepExpanded[id]
-                        const toggle = () => setStepExpanded({ ...stepExpanded, [id]: !isOpen })
+                        const expandedType = stepExpanded[id]
+                        const toggleReq = () => setStepExpanded({ ...stepExpanded, [id]: expandedType === 'request' ? null : 'request' })
+                        const toggleErr = () => setStepExpanded({ ...stepExpanded, [id]: expandedType === 'exception' ? null : 'exception' })
+
                         const req = r.request as Record<string, unknown> | null
-                        const hasReq = !!req && (req.cUrl || req.url || req.method)
+                        const hasReq = !!(req && (req.cUrl || req.url || req.method))
+                        
+                        const exc = r.exception as Record<string, unknown> | null
+                        const st = String(r.status ?? '').toLowerCase()
+                        const isFail = st === 'failed' || st === 'failure' || st === 'broken' || st === 'error'
+                        const hasErr = isFail && !!exc
+
                         return (
                           <>
                             <tr key={id} className="border-t border-gray-100">
                               <td className="px-2 py-1">{String(r.name ?? '')}</td>
                               <td className={`px-2 py-1 ${statusTextClass(String(r.status ?? ''))}`}>{String(r.status ?? '')}</td>
                               <td className="px-2 py-1">{fmtMs(r.duration as number)}</td>
-                              <td className="px-2 py-1">
-                                {hasReq ? (
-                                  <button type="button" className="rounded-md bg-green-600 text-white text-xs px-2 py-1 shadow-soft hover:bg-green-700" onClick={toggle}>
+                              <td className="px-2 py-1 flex items-center gap-2">
+                                {hasReq && (
+                                  <button type="button" className="rounded-md bg-green-600 text-white text-xs px-2 py-1 shadow-soft hover:bg-green-700" onClick={toggleReq}>
                                     REST Query
                                   </button>
-                                ) : (
+                                )}
+                                {hasErr && (
+                                  <button type="button" className="rounded-md bg-rose-600 text-white text-xs px-2 py-1 shadow-soft hover:bg-rose-700" onClick={toggleErr}>
+                                    Show Details
+                                  </button>
+                                )}
+                                {!hasReq && !hasErr && (
                                   <span className="text-xs text-gray-400">N/A</span>
                                 )}
                               </td>
                             </tr>
-                            {isOpen && hasReq && (
+                            {expandedType === 'request' && hasReq && (
                               <tr>
                                 <td colSpan={4} className="px-2 py-2 bg-gray-50">
-                                  <textarea
-                                    readOnly
-                                    rows={4}
-                                    wrap="soft"
-                                    value={String((req as Record<string, unknown>)?.cUrl || '')}
-                                    className="w-full max-w-full rounded-md border border-gray-300 bg-gray-100 font-mono text-xs p-2 resize-none"
-                                  />
+                                  {(() => {
+                                    const curlText = buildCurl(req as Record<string, unknown>)
+                                    return (
+                                      <textarea
+                                        readOnly
+                                        rows={4}
+                                        wrap="soft"
+                                        value={curlText}
+                                        onClick={() => copyCurl(curlText)}
+                                        title="Click to copy cURL"
+                                        className="w-full max-w-full rounded-md border border-gray-300 bg-gray-100 font-mono text-xs p-2 resize-none cursor-pointer"
+                                      />
+                                    )
+                                  })()}
+                                </td>
+                              </tr>
+                            )}
+                            {expandedType === 'exception' && hasErr && exc && (
+                              <tr>
+                                <td colSpan={4} className="px-2 py-2 bg-rose-50 border border-rose-100 rounded-md">
+                                  <div className="space-y-2">
+                                    <div>
+                                      <div className="font-semibold text-rose-700 text-xs mb-1">Error Message</div>
+                                      <textarea
+                                        readOnly
+                                        rows={3}
+                                        wrap="soft"
+                                        value={`${String(exc.errorType || 'Error')}\n${String(exc.message || '')}`}
+                                        className="w-full max-w-full rounded-md border border-rose-200 bg-white font-mono text-xs p-2 resize-none text-rose-800 focus:outline-none"
+                                      />
+                                    </div>
+                                    {Array.isArray(exc.stackTrace) && exc.stackTrace.length > 0 && (
+                                      <div>
+                                        <div className="font-semibold text-gray-600 text-xs mb-1">Stack Trace</div>
+                                        <textarea
+                                          readOnly
+                                          rows={8}
+                                          wrap="off"
+                                          value={exc.stackTrace.map((t: Record<string, unknown>) => `at ${t.declaringClass}.${t.methodName}(${t.fileName}:${t.lineNumber})`).join('\n')}
+                                          className="w-full max-w-full rounded-md border border-gray-300 bg-gray-50 font-mono text-[10px] p-2 resize-none text-gray-600 focus:outline-none"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
                                 </td>
                               </tr>
                             )}

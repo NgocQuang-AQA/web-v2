@@ -1,12 +1,15 @@
 import type { Env } from '../models/helperVoc'
+import { sendLog } from '../lib/logger'
 import { modeNameMap, unitModeNameMap, highlightModeIds, softwareNameMap, difficultyNameMap } from '../data/helperVoc'
 
 export async function fetchJson<T>(url: string): Promise<T | null> {
   try {
     const res = await fetch(url)
+    void sendLog({ level: 'info', message: 'VOC API Call', source: 'HelperVoc', meta: { url } })
     if (!res.ok) return null
     return await res.json()
   } catch {
+    void sendLog({ level: 'error', message: 'VOC API Error', source: 'HelperVoc', meta: { url } })
     return null
   }
 }

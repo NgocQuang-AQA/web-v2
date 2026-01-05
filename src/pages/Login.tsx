@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import NoData from '../assets/no-data-found_585024-42.avif'
 import { apiFetch, setAuthSession } from '../lib/api'
+import { sendLog } from '../lib/logger'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -36,6 +37,7 @@ export default function Login() {
         const menus: string[] = Array.isArray(data?.menus) ? data.menus : []
 
         setAuthSession({ token, remember, role, username, menus })
+        void sendLog({ level: 'info', message: 'Login Success', source: 'Auth', meta: { username, role, time: new Date().toISOString() } })
         const go = (() => {
           const r = role.toUpperCase()
           if (r === 'OTHER' || r === 'USER') return '/agents/notes'

@@ -14,6 +14,8 @@ import { createAuthMiddleware, roles } from "./middleware/auth.js";
 import { createRunRouter } from "./routes/run.js";
 import { createNoticesRouter } from "./routes/notices.js";
 import { createTestsRouter } from "./routes/tests.js";
+import { createLogsRouter } from "./routes/logs.js";
+import { createDashboardRouter } from "./routes/dashboard.js";
 
 const envCandidates = [
   path.resolve(process.cwd(), ".env"),
@@ -51,6 +53,8 @@ app.use("/api/chat", requireAuth([roles.admin, roles.ba, roles.be]), createChatR
 app.use("/api/run", requireAuth([roles.admin, roles.be]), createRunRouter());
 app.use("/api/notices", requireAuth([roles.admin, roles.ba, roles.be]), createNoticesRouter());
 app.use("/api/tests", createTestsRouter({ filesRepo }));
+app.use("/api/logs", createLogsRouter({ filesRepo }));
+app.use("/api/dashboard", requireAuth([roles.admin, roles.ba, roles.be, roles.user]), createDashboardRouter({ filesRepo, testRunsRepo }));
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => {

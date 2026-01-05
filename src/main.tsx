@@ -13,6 +13,7 @@ import Login from './pages/Login.tsx'
 import NotFound from './pages/NotFound.tsx'
 import AccountManagement from './pages/admin/AccountManagement.tsx'
 import Protected from './app/Protected'
+import { installWebLogger } from './lib/logger'
 
 const router = createBrowserRouter([
   { path: '/', element: <Protected><DailyAssistant /></Protected> },
@@ -30,6 +31,8 @@ const router = createBrowserRouter([
   { path: '/reports/global-cn-live/:id', element: <Protected><GlobalReportDetail /></Protected> },
   { path: '/agents/:id', element: <Protected><AgentPlaceholder /></Protected> }
 ])
+
+installWebLogger()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

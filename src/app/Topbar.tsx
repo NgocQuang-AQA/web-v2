@@ -4,7 +4,9 @@ import ChatBotModal from '../features/chat/ChatBotModal'
 import NotificationsModal from '../features/notices/NotificationsModal'
 import { clearAuth, getAuthUsername } from '../lib/api'
 
-export default function Topbar() {
+type Props = { onOpenMenu?: () => void }
+
+export default function Topbar({ onOpenMenu }: Props) {
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
@@ -33,6 +35,18 @@ export default function Topbar() {
 
   return (
     <div className="flex items-center gap-3 mb-4">
+      <button
+        type="button"
+        aria-label="Open menu"
+        className="lg:hidden inline-flex items-center justify-center rounded-lg border border-white/0 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none size-9"
+        onClick={() => onOpenMenu && onOpenMenu()}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M3 6h18"/>
+          <path d="M3 12h18"/>
+          <path d="M3 18h18"/>
+        </svg>
+      </button>
       <div className="flex-1" />
       {/* Search input & Ask button hidden per request */}
 
