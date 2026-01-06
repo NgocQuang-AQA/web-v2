@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose'
 
 const noticeSchema = new mongoose.Schema(
   {
@@ -6,7 +6,7 @@ const noticeSchema = new mongoose.Schema(
     time: { type: Date },
     namepath: { type: String },
   },
-  { collection: "notice", timestamps: true }
-);
+  { collection: 'notice', timestamps: true }
+)
 
-export const Notice = mongoose.model("Notice", noticeSchema);
+export const Notice = mongoose.model('Notice', noticeSchema)

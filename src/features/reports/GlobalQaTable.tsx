@@ -18,22 +18,63 @@ type Props = {
 }
 
 const StopIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className={className}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z"
+    />
   </svg>
 )
 const ChevronDownIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className={className}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="m19.5 8.25-7.5 7.5-7.5-7.5"
+    />
   </svg>
 )
 const ChevronUpIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className={className}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="m4.5 15.75 7.5-7.5 7.5 7.5"
+    />
   </svg>
 )
 
-export default function GlobalQaTable({ title = 'Report Generator', collection = 'global-qa', detailPathPrefix = '/reports/global', embedded = false, showSearch = true, nameOverride, reloadEpoch = 0 }: Props) {
+export default function GlobalQaTable({
+  title = 'Report Generator',
+  collection = 'global-qa',
+  detailPathPrefix = '/reports/global',
+  embedded = false,
+  showSearch = true,
+  nameOverride,
+  reloadEpoch = 0,
+}: Props) {
   const navigate = useNavigate()
   const location = useLocation()
   const [items, setItems] = useState<AnyRecord[]>([])
@@ -42,7 +83,8 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
   const initParams = new URLSearchParams(window.location.search)
   const initPage = Number(initParams.get('page')) || 1
   const initPageSize = Number(initParams.get('pageSize')) || 10
-  const initSortBy = (initParams.get('sortBy') as 'name' | 'time_insert') || 'time_insert'
+  const initSortBy =
+    (initParams.get('sortBy') as 'name' | 'time_insert') || 'time_insert'
   const initOrder = (initParams.get('order') as 'asc' | 'desc') || 'desc'
   const initName = initParams.get('name') || ''
   const [page, setPage] = useState(initPage)
@@ -60,13 +102,20 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
       else params.set(k, String(v))
     })
     const s = params.toString()
-    navigate({ pathname: location.pathname, search: s ? `?${s}` : '' }, { replace: true })
+    navigate(
+      { pathname: location.pathname, search: s ? `?${s}` : '' },
+      { replace: true }
+    )
   }
-
 
   useEffect(() => {
     let canceled = false
-    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), sortBy, order })
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(pageSize),
+      sortBy,
+      order,
+    })
     if (effectiveName) params.set('name', effectiveName)
     apiFetch(`/api/files/${collection}?${params.toString()}`)
       .then(async (res) => {
@@ -105,7 +154,8 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
     return [...uniq, ...rest].slice(0, 5)
   })()
 
-  const getId = (it: AnyRecord) => String((it as AnyRecord).id ?? (it as AnyRecord)._id ?? '')
+  const getId = (it: AnyRecord) =>
+    String((it as AnyRecord).id ?? (it as AnyRecord)._id ?? '')
   const pageCount = Math.max(1, Math.ceil(total / pageSize) || 1)
   const startIdx = total === 0 ? 0 : (page - 1) * pageSize + 1
   const endIdx = Math.min(total, page * pageSize)
@@ -140,7 +190,11 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
         <div className="text-sm text-rose-600">Error: {error}</div>
       ) : items.length === 0 ? (
         <div className="relative w-full flex items-center justify-center py-6">
-          <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+          <img
+            src={NoData}
+            alt="No data"
+            className="max-h-64 w-auto object-contain opacity-80 rounded-xl"
+          />
         </div>
       ) : (
         <>
@@ -154,28 +208,48 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
                 updateQuery({ name, page: 1 })
               }}
             >
-              <input value={name} onChange={(e) => setName(e.target.value)} className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="Search by Name" />
-              <button className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 text-white text-sm px-3 py-2 shadow-soft hover:bg-indigo-700 active:scale-[0.98] transition" type="submit">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="flex-1 input"
+                placeholder="Search by Name"
+              />
+              <button className="btn btn-primary" type="submit">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-4 h-4"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                  />
                 </svg>
                 <span className="font-medium">Search</span>
               </button>
             </form>
           )}
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="table">
               <thead>
-                <tr className="text-left text-gray-600">
-                  <th className="px-3 py-2">#</th>
+                <tr>
+                  <th>#</th>
                   {displayKeys.map((k) => {
                     const sortable = k === 'time_insert' || k === 'name'
                     const active = sortable && sortBy === k
-                    const IconEl = active ? (order === 'asc' ? ChevronUpIcon : ChevronDownIcon) : StopIcon
+                    const IconEl = active
+                      ? order === 'asc'
+                        ? ChevronUpIcon
+                        : ChevronDownIcon
+                      : StopIcon
                     return (
                       <th
                         key={k}
-                        className={`px-3 py-2 capitalize ${sortable ? 'cursor-pointer select-none' : ''}`}
+                        className={`capitalize ${sortable ? 'cursor-pointer select-none' : ''}`}
                         onClick={() => {
                           if (!sortable) return
                           setLoading(true)
@@ -196,7 +270,11 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
                       >
                         <div className="flex items-center gap-1">
                           <span>{k.replace('_', ' ')}</span>
-                          {sortable && <IconEl className={`size-4 ${active ? 'text-indigo-600' : 'text-gray-400'}`} />}
+                          {sortable && (
+                            <IconEl
+                              className={`size-4 ${active ? 'text-indigo-600' : 'text-gray-400'}`}
+                            />
+                          )}
                         </div>
                       </th>
                     )
@@ -207,30 +285,38 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
                 {items.map((it, idx) => {
                   const id = getId(it)
                   return (
-                  <tr key={id} className="border-t border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => { if (id) navigate(`${detailPathPrefix}/${id}`) }}>
-                    <td className="px-3 py-2 text-gray-500">{(page - 1) * pageSize + idx + 1}</td>
-                    {displayKeys.map((k) => {
-                      let v = (it as AnyRecord)[k]
-                      if (k === 'time_insert') v = formatTimeInsert(v)
-                      if (k === '_tiDate') v = formatTimeInsert(v)
-                      if (v == null) v = ''
-                      if (typeof v === 'object') v = JSON.stringify(v)
-                      return (
-                        <td key={k} className="px-3 py-2">{String(v)}</td>
-                      )
-                    })}
-                  </tr>
+                    <tr
+                      key={id}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        if (id) navigate(`${detailPathPrefix}/${id}`)
+                      }}
+                    >
+                      <td className="text-gray-500">
+                        {(page - 1) * pageSize + idx + 1}
+                      </td>
+                      {displayKeys.map((k) => {
+                        let v = (it as AnyRecord)[k]
+                        if (k === 'time_insert') v = formatTimeInsert(v)
+                        if (k === '_tiDate') v = formatTimeInsert(v)
+                        if (v == null) v = ''
+                        if (typeof v === 'object') v = JSON.stringify(v)
+                        return <td key={k}>{String(v)}</td>
+                      })}
+                    </tr>
                   )
                 })}
               </tbody>
             </table>
           </div>
           <div className="mt-3 flex items-center justify-between">
-            <div className="text-xs text-gray-500">Showing {startIdx}-{endIdx} of {total}</div>
+            <div className="text-xs text-gray-500">
+              Showing {startIdx}-{endIdx} of {total}
+            </div>
             <div className="flex items-center gap-2">
               <div className="text-sm text-gray-600">Rows</div>
               <select
-                className="rounded-xl border border-gray-200 px-2 py-1 text-sm"
+                className="select px-2 py-1"
                 value={pageSize}
                 onChange={(e) => {
                   const sz = Number(e.target.value)
@@ -245,9 +331,11 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
                 <option value={20}>20</option>
                 <option value={50}>50</option>
               </select>
-              <div className="text-sm text-gray-600">Page {page} / {pageCount}</div>
+              <div className="text-sm text-gray-600">
+                Page {page} / {pageCount}
+              </div>
               <button
-                className={`rounded-xl bg-gray-200 text-gray-700 text-sm px-3 py-1.5 ${prevDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}`}
+                className={`btn btn-secondary ${prevDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={prevDisabled}
                 onClick={() => {
                   if (page > 1) {
@@ -261,7 +349,7 @@ export default function GlobalQaTable({ title = 'Report Generator', collection =
                 Previous
               </button>
               <button
-                className={`rounded-xl bg-indigo-600 text-white text-sm px-3 py-1.5 ${nextDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}`}
+                className={`btn btn-primary ${nextDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                 disabled={nextDisabled}
                 onClick={() => {
                   if (page < pageCount) {

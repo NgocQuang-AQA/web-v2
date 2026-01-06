@@ -17,11 +17,11 @@ export default function Protected({ children }: { children: React.ReactNode }) {
 
   if (r === 'BA') {
     // Allow: /agents/notes, /agents/report, and report details /reports/...
-    const allowed = 
-      p.startsWith('/agents/notes') || 
-      p.startsWith('/agents/report') || 
+    const allowed =
+      p.startsWith('/agents/notes') ||
+      p.startsWith('/agents/report') ||
       p.startsWith('/reports/')
-    
+
     if (!allowed) {
       return <Navigate to="/404" replace />
     }

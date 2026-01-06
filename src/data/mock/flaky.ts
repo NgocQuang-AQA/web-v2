@@ -7,6 +7,6 @@ export const flakies: FlakyItem[] = [
     suite: 'UI Smoke Tests',
     failures: 7,
     lastSeen: '2 hours ago',
-    trendMs: 2300
-  }
+    trendMs: 2300,
+  },
 ]

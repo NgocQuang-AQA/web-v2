@@ -13,8 +13,14 @@ export default function GlobalAlert() {
   const storageKey = 'sdet-run-flags'
 
   const clearTimers = () => {
-    if (timer1.current) { window.clearTimeout(timer1.current); timer1.current = null }
-    if (timer2.current) { window.clearTimeout(timer2.current); timer2.current = null }
+    if (timer1.current) {
+      window.clearTimeout(timer1.current)
+      timer1.current = null
+    }
+    if (timer2.current) {
+      window.clearTimeout(timer2.current)
+      timer2.current = null
+    }
   }
 
   const show = useCallback((text: string) => {
@@ -23,13 +29,16 @@ export default function GlobalAlert() {
     setOpen(true)
     setHiding(false)
     timer1.current = window.setTimeout(() => setHiding(true), 3000)
-    timer2.current = window.setTimeout(() => { setOpen(false); setHiding(false) }, 3800)
+    timer2.current = window.setTimeout(() => {
+      setOpen(false)
+      setHiding(false)
+    }, 3800)
   }, [])
 
   const getFlags = () => {
     try {
       const s = localStorage.getItem(storageKey)
-      const obj = s ? JSON.parse(s) as Record<string, boolean> : {}
+      const obj = s ? (JSON.parse(s) as Record<string, boolean>) : {}
       return obj && typeof obj === 'object' ? obj : {}
     } catch {
       return {}
@@ -42,7 +51,9 @@ export default function GlobalAlert() {
   const clearFlags = () => {
     try {
       localStorage.removeItem(storageKey)
-    } catch { void 0 }
+    } catch {
+      void 0
+    }
   }
 
   useEffect(() => {
@@ -75,7 +86,9 @@ export default function GlobalAlert() {
       const lastTime = localStorage.getItem(LS_TIME) || ''
       const changed = (id && id !== lastId) || (time && time !== lastTime)
       if (changed) {
-        const text = String(doc.content || '').trim() || 'Successfully ran automation tests.'
+        const text =
+          String(doc.content || '').trim() ||
+          'Successfully ran automation tests.'
         show(text)
         if (id) localStorage.setItem(LS_KEY, id)
         if (time) localStorage.setItem(LS_TIME, time)
@@ -84,12 +97,18 @@ export default function GlobalAlert() {
     }
     const t = window.setInterval(poll, 4000)
     if (anyRunning()) poll()
-    return () => { canceled = true; window.clearInterval(t) }
+    return () => {
+      canceled = true
+      window.clearInterval(t)
+    }
   }, [show, anyRunning])
 
   if (!open || !msg) return null
   return (
-    <div className={`alert-toast shadow-lg alert alert-success ${hiding ? 'alert-hide' : ''}`} role="alert">
+    <div
+      className={`alert-toast shadow-lg alert alert-success ${hiding ? 'alert-hide' : ''}`}
+      role="alert"
+    >
       {msg}
     </div>
   )

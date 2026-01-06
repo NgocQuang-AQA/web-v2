@@ -9,7 +9,7 @@ export default function AgentSidebar() {
   const role = getAuthRole()
   const menus = getAuthMenus()
 
-  const visibleAgents = agents.filter(a => {
+  const visibleAgents = agents.filter((a) => {
     if (menus && menus.length > 0) {
       return menus.includes(a.id)
     }
@@ -47,24 +47,41 @@ export default function AgentSidebar() {
         {/* <div className="text-sm bg-indigo-50 text-indigo-600 rounded-lg px-2 py-1">7</div> */}
       </div>
       <div className="space-y-3">
-        {visibleAgents.map(a => {
+        {visibleAgents.map((a) => {
           const active = a.id === activeId
-          const base = 'w-full flex items-center justify-between rounded-xl px-4 py-3 bg-gray-50 hover:bg-gray-100'
-          const tone = active ? 'bg-indigo-50 hover:bg-indigo-100 ring-1 ring-indigo-200' : ''
+          const base =
+            'w-full flex items-center justify-between rounded-xl px-4 py-3 bg-gray-50 hover:bg-gray-100'
+          const tone = active
+            ? 'bg-indigo-50 hover:bg-indigo-100 ring-1 ring-indigo-200'
+            : ''
           const cls = `${base} ${tone}`
           return (
-          <Link to={`/agents/${a.id}`} key={a.id} className={cls} aria-current={active ? 'page' : undefined}>
-            <div className="flex items-center gap-3">
-              <div className="text-xl">{a.icon}</div>
-              <div className={`text-sm font-medium ${active ? 'text-indigo-700' : ''}`}>{a.name}</div>
-            </div>
-            <div className="flex items-center gap-2">
-              {a.counters?.map((c, i) => (
-                <span key={i} className="text-xs bg-indigo-100 text-indigo-700 rounded-full px-2 py-0.5">{c}</span>
-              ))}
-              <StatusDot status={a.status} />
-            </div>
-          </Link>
+            <Link
+              to={`/agents/${a.id}`}
+              key={a.id}
+              className={cls}
+              aria-current={active ? 'page' : undefined}
+            >
+              <div className="flex items-center gap-3">
+                <div className="text-xl">{a.icon}</div>
+                <div
+                  className={`text-sm font-medium ${active ? 'text-indigo-700' : ''}`}
+                >
+                  {a.name}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {a.counters?.map((c, i) => (
+                  <span
+                    key={i}
+                    className="text-xs bg-indigo-100 text-indigo-700 rounded-full px-2 py-0.5"
+                  >
+                    {c}
+                  </span>
+                ))}
+                <StatusDot status={a.status} />
+              </div>
+            </Link>
           )
         })}
 
@@ -72,12 +89,16 @@ export default function AgentSidebar() {
           <Link
             to="/admin/accounts"
             className={`w-full flex items-center justify-between rounded-xl px-4 py-3 bg-gray-50 hover:bg-gray-100 ${
-              pathname.startsWith('/admin/accounts') ? 'bg-indigo-50 hover:bg-indigo-100 ring-1 ring-indigo-200' : ''
+              pathname.startsWith('/admin/accounts')
+                ? 'bg-indigo-50 hover:bg-indigo-100 ring-1 ring-indigo-200'
+                : ''
             }`}
           >
             <div className="flex items-center gap-3">
               <div className="text-xl">👥</div>
-              <div className={`text-sm font-medium ${pathname.startsWith('/admin/accounts') ? 'text-indigo-700' : ''}`}>
+              <div
+                className={`text-sm font-medium ${pathname.startsWith('/admin/accounts') ? 'text-indigo-700' : ''}`}
+              >
                 Account Management
               </div>
             </div>

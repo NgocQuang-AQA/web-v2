@@ -4,7 +4,13 @@ import AgentSidebar from '../app/AgentSidebar'
 import Modal from '../components/Modal'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { Env, TabKey, VocUser } from '../models/helperVoc'
-import { envBase, flagByCode, tabsPreview, tabsReport, flagEtcSrc } from '../data/helperVoc'
+import {
+  envBase,
+  flagByCode,
+  tabsPreview,
+  tabsReport,
+  flagEtcSrc,
+} from '../data/helperVoc'
 import SearchForm from '../features/helpervoc/SearchForm'
 import ReportSearchForm from '../features/helpervoc/ReportSearchForm'
 import UserSummary from '../features/helpervoc/UserSummary'
@@ -18,12 +24,15 @@ export default function HelperVoc() {
   const initParams = new URLSearchParams(window.location.search)
   const initEnv = (initParams.get('env') as Env) || 'LIVE'
   const initVocId = initParams.get('vocId') || ''
-  const initSearchBy = (initParams.get('searchBy') as 'vocId' | 'userNo') || 'vocId'
+  const initSearchBy =
+    (initParams.get('searchBy') as 'vocId' | 'userNo') || 'vocId'
   const initTab = (initParams.get('tab') as TabKey) || 'gdr'
   const initPage = Number(initParams.get('page')) || 1
   const initSize = Number(initParams.get('size')) || 10
   const initViewParam = initParams.get('view') || 'preview'
-  const [view, setView] = useState<'preview' | 'report'>(initViewParam === 'report' ? 'report' : 'preview')
+  const [view, setView] = useState<'preview' | 'report'>(
+    initViewParam === 'report' ? 'report' : 'preview'
+  )
   const [env, setEnv] = useState<Env>(initEnv)
   const [vocId, setVocId] = useState(initVocId)
   const [searchBy, setSearchBy] = useState<'vocId' | 'userNo'>(initSearchBy)
@@ -51,7 +60,10 @@ export default function HelperVoc() {
   const base = envBase[env]
 
   const tabsList = view === 'report' ? tabsReport : tabsPreview
-  const currentPath = useMemo(() => tabsList.find(t => t.key === active)?.path || tabsList[0].path, [active, tabsList])
+  const currentPath = useMemo(
+    () => tabsList.find((t) => t.key === active)?.path || tabsList[0].path,
+    [active, tabsList]
+  )
 
   const updateQuery = (patch: Record<string, unknown>) => {
     const params = new URLSearchParams(location.search)
@@ -60,7 +72,10 @@ export default function HelperVoc() {
       else params.set(k, String(v))
     })
     const s = params.toString()
-    navigate({ pathname: location.pathname, search: s ? `?${s}` : '' }, { replace: true })
+    navigate(
+      { pathname: location.pathname, search: s ? `?${s}` : '' },
+      { replace: true }
+    )
   }
 
   const didInit = useRef(false)
@@ -75,7 +90,11 @@ export default function HelperVoc() {
       setError(null)
       setRows([])
       const url = `${baseParam}/v1/helper/voc?vocId=${encodeURIComponent(vocId)}`
-      let json: { success?: boolean; data?: VocUser | null; error?: { debugMessage?: string } } | null = null
+      let json: {
+        success?: boolean
+        data?: VocUser | null
+        error?: { debugMessage?: string }
+      } | null = null
       try {
         const res = await fetch(url)
         try {
@@ -118,7 +137,11 @@ export default function HelperVoc() {
     if (searchBy === 'vocId') {
       setLoading(true)
       const url = `${base}/v1/helper/voc?vocId=${encodeURIComponent(id)}`
-      let json: { success?: boolean; data?: VocUser | null; error?: { debugMessage?: string } } | null = null
+      let json: {
+        success?: boolean
+        data?: VocUser | null
+        error?: { debugMessage?: string }
+      } | null = null
       try {
         const res = await fetch(url)
         try {
@@ -148,7 +171,7 @@ export default function HelperVoc() {
       setLoading(false)
     } else {
       setUser(null)
-      setSearchEpoch(x => x + 1)
+      setSearchEpoch((x) => x + 1)
     }
   }
 
@@ -185,14 +208,17 @@ export default function HelperVoc() {
       }
     }
     load()
-    return () => { canceled = true }
+    return () => {
+      canceled = true
+    }
   }, [view, submittedFrom, searchEpoch, page, size, base, currentPath])
-  
+
   useEffect(() => {
     let canceled = false
     async function loadPreview() {
       if (view !== 'preview') return
-      const userNo = searchBy === 'userNo' ? vocId.trim() : String(user?.userNo || '')
+      const userNo =
+        searchBy === 'userNo' ? vocId.trim() : String(user?.userNo || '')
       if (!userNo) return
       setLoading(true)
       setError(null)
@@ -206,24 +232,55 @@ export default function HelperVoc() {
       }
     }
     loadPreview()
-    return () => { canceled = true }
-  }, [view, searchBy, vocId, user?.userNo, active, page, size, base, currentPath])
+    return () => {
+      canceled = true
+    }
+  }, [
+    view,
+    searchBy,
+    vocId,
+    user?.userNo,
+    active,
+    page,
+    size,
+    base,
+    currentPath,
+  ])
 
   const cols = useMemo(() => {
     if (view === 'report') {
       if (active === 'monthly') return ['month', 'year', 'numberOfUsers']
       if (active === 'tour') {
         const keys = rows.length > 0 ? Object.keys(rows[0]) : []
-        const ordered = ['dt', '2', '4', '5', '6'].filter(k => keys.includes(k))
+        const ordered = ['dt', '2', '4', '5', '6'].filter((k) =>
+          keys.includes(k)
+        )
         return ordered.length ? ordered : keys
       }
       const keys = rows.length > 0 ? Object.keys(rows[0]) : []
-      const preferred = ['date', 'time', 'timeStart', 'timeEnd', 'register_dt', 'regdate']
-      const reordered = preferred.filter(k => keys.includes(k)).concat(keys.filter(k => !preferred.includes(k)))
+      const preferred = [
+        'date',
+        'time',
+        'timeStart',
+        'timeEnd',
+        'register_dt',
+        'regdate',
+      ]
+      const reordered = preferred
+        .filter((k) => keys.includes(k))
+        .concat(keys.filter((k) => !preferred.includes(k)))
       return reordered
     }
     if (active === 'gdr') {
-      const preferred = ['tm_tlcode', 'tm_code', 'mode_id', 'modeName', 'systemName', 'tm_time_start', 'tm_time_end']
+      const preferred = [
+        'tm_tlcode',
+        'tm_code',
+        'mode_id',
+        'modeName',
+        'systemName',
+        'tm_time_start',
+        'tm_time_end',
+      ]
       return preferred
     } else if (active === 'gs') {
       const preferred = [
@@ -252,7 +309,7 @@ export default function HelperVoc() {
         'pg_concede',
         'pg_mulligan',
         'pg_tdcode',
-        'round_code'
+        'round_code',
       ]
       return preferred
     } else if (active === 'nasmo_gdr') {
@@ -267,10 +324,12 @@ export default function HelperVoc() {
         'register_dt',
         'service_code',
         'file_extension',
-        'status_code'
+        'status_code',
       ]
       const keys = rows.length > 0 ? Object.keys(rows[0]) : []
-      const reordered = preferred.filter(k => keys.includes(k)).concat(keys.filter(k => !preferred.includes(k)))
+      const reordered = preferred
+        .filter((k) => keys.includes(k))
+        .concat(keys.filter((k) => !preferred.includes(k)))
       return reordered
     } else if (active === 'nasmo_gs') {
       const preferred = [
@@ -290,10 +349,12 @@ export default function HelperVoc() {
         'distance',
         'gallery_yn',
         'store_yn',
-        'is_enc'
+        'is_enc',
       ]
       const keys = rows.length > 0 ? Object.keys(rows[0]) : []
-      const reordered = preferred.filter(k => keys.includes(k)).concat(keys.filter(k => !preferred.includes(k)))
+      const reordered = preferred
+        .filter((k) => keys.includes(k))
+        .concat(keys.filter((k) => !preferred.includes(k)))
       return reordered
     } else if (active === 'practice') {
       const preferred = [
@@ -305,20 +366,32 @@ export default function HelperVoc() {
         'td_regdate',
         'ts_swing_video',
         'ts_sicode',
-        'ts_swing_position'
+        'ts_swing_position',
       ]
       return preferred
     } else {
-      const preferred = ['tlCode', 'code', 'modeId', 'modeName', 'timeStart', 'timeEnd']
+      const preferred = [
+        'tlCode',
+        'code',
+        'modeId',
+        'modeName',
+        'timeStart',
+        'timeEnd',
+      ]
       const keys = rows.length > 0 ? Object.keys(rows[0]) : []
-      const reordered = preferred.filter(k => keys.includes(k)).concat(keys.filter(k => !preferred.includes(k)))
+      const reordered = preferred
+        .filter((k) => keys.includes(k))
+        .concat(keys.filter((k) => !preferred.includes(k)))
       return reordered
     }
   }, [rows, active, view])
 
   const filteredRows = useMemo(() => rows, [rows])
 
-  const effectiveRows = view === 'report' ? filteredRows.slice((page - 1) * size, (page - 1) * size + size) : rows
+  const effectiveRows =
+    view === 'report'
+      ? filteredRows.slice((page - 1) * size, (page - 1) * size + size)
+      : rows
   const pageCount = useMemo(() => {
     return Math.max(1, totalPages || 1)
   }, [totalPages])
@@ -371,15 +444,37 @@ export default function HelperVoc() {
   return (
     <AppLayout sidebar={<AgentSidebar />}>
       {noticeOpen && noticeMsg && (
-        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none shadow-lg alert alert-success ${noticeHiding ? 'alert-hide' : ''}`} role="alert">
+        <div
+          className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none shadow-lg alert alert-success ${noticeHiding ? 'alert-hide' : ''}`}
+          role="alert"
+        >
           {noticeMsg}
         </div>
       )}
       <div className="space-y-4">
         <div className="rounded-2xl bg-white shadow-soft p-4">
           <div className="flex items-center gap-4 border-b border-gray-100 mb-3">
-            <button className={`px-3 py-2 text-sm ${view === 'preview' ? 'text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600'}`} onClick={() => { setView('preview'); setActive('gdr'); updateQuery({ view: 'preview', tab: 'gdr' }) }}>Preview VOC</button>
-            <button className={`px-3 py-2 text-sm ${view === 'report' ? 'text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600'}`} onClick={() => { setView('report'); setSubmittedFrom(from); setActive('monthly'); updateQuery({ view: 'report', tab: 'monthly', from }) }}>Report</button>
+            <button
+              className={`px-3 py-2 text-sm ${view === 'preview' ? 'text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600'}`}
+              onClick={() => {
+                setView('preview')
+                setActive('gdr')
+                updateQuery({ view: 'preview', tab: 'gdr' })
+              }}
+            >
+              Preview VOC
+            </button>
+            <button
+              className={`px-3 py-2 text-sm ${view === 'report' ? 'text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600'}`}
+              onClick={() => {
+                setView('report')
+                setSubmittedFrom(from)
+                setActive('monthly')
+                updateQuery({ view: 'report', tab: 'monthly', from })
+              }}
+            >
+              Report
+            </button>
           </div>
           {view === 'preview' ? (
             <>
@@ -387,24 +482,45 @@ export default function HelperVoc() {
                 env={env}
                 vocId={vocId}
                 searchBy={searchBy}
-                onChangeEnv={(v: Env) => { setEnv(v); updateQuery({ env: v }) }}
-                onChangeVocId={(v: string) => { setVocId(v); updateQuery({ vocId: v }) }}
-                onChangeSearchBy={(v: 'vocId' | 'userNo') => { setSearchBy(v); updateQuery({ searchBy: v }) }}
+                onChangeEnv={(v: Env) => {
+                  setEnv(v)
+                  updateQuery({ env: v })
+                }}
+                onChangeVocId={(v: string) => {
+                  setVocId(v)
+                  updateQuery({ vocId: v })
+                }}
+                onChangeSearchBy={(v: 'vocId' | 'userNo') => {
+                  setSearchBy(v)
+                  updateQuery({ searchBy: v })
+                }}
                 onSearch={search}
               />
-              {searchBy === 'vocId' && user && <UserSummary user={user} flagSrc={flagSrc} onCopy={copySession} />}
+              {searchBy === 'vocId' && user && (
+                <UserSummary
+                  user={user}
+                  flagSrc={flagSrc}
+                  onCopy={copySession}
+                />
+              )}
             </>
           ) : (
             <>
               <ReportSearchForm
                 env={env}
                 from={from}
-                onChangeEnv={(v: Env) => { setEnv(v); updateQuery({ env: v }) }}
-                onChangeFrom={(v: string) => { setFrom(v); updateQuery({ from: v }) }}
+                onChangeEnv={(v: Env) => {
+                  setEnv(v)
+                  updateQuery({ env: v })
+                }}
+                onChangeFrom={(v: string) => {
+                  setFrom(v)
+                  updateQuery({ from: v })
+                }}
                 onSearch={() => {
                   setSubmittedFrom(from)
                   setPage(1)
-                  setSearchEpoch(x => x + 1)
+                  setSearchEpoch((x) => x + 1)
                   updateQuery({ env, from, page: 1, tab: active, size })
                 }}
               />
@@ -412,7 +528,17 @@ export default function HelperVoc() {
           )}
           <div className="flex items-center gap-4 border-b border-gray-100">
             {tabsList.map((t) => (
-              <button key={t.key} className={`px-3 py-2 text-sm ${active === t.key ? 'text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600'}`} onClick={() => { setActive(t.key); setPage(1); updateQuery({ tab: t.key, page: 1 }) }}>{t.label}</button>
+              <button
+                key={t.key}
+                className={`px-3 py-2 text-sm ${active === t.key ? 'text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600'}`}
+                onClick={() => {
+                  setActive(t.key)
+                  setPage(1)
+                  updateQuery({ tab: t.key, page: 1 })
+                }}
+              >
+                {t.label}
+              </button>
             ))}
           </div>
           <div className="mt-3">
@@ -425,7 +551,10 @@ export default function HelperVoc() {
               size={size}
               loading={loading}
               error={error}
-              onOpenSwing={(urls) => { setSwingUrls(urls); setSwingOpen(true) }}
+              onOpenSwing={(urls) => {
+                setSwingUrls(urls)
+                setSwingOpen(true)
+              }}
             />
           </div>
           <Pagination
@@ -434,25 +563,47 @@ export default function HelperVoc() {
             pageCount={pageCount}
             prevDisabled={prevDisabled}
             nextDisabled={nextDisabled}
-            onChangePage={(np) => { setPage(np); updateQuery({ page: np }) }}
-            onChangeSize={(n) => { setSize(n); setPage(1); updateQuery({ size: n, page: 1 }) }}
+            onChangePage={(np) => {
+              setPage(np)
+              updateQuery({ page: np })
+            }}
+            onChangeSize={(n) => {
+              setSize(n)
+              setPage(1)
+              updateQuery({ size: n, page: 1 })
+            }}
           />
         </div>
       </div>
-      <Modal open={swingOpen} onClose={() => setSwingOpen(false)} title="TS Swing Video">
+      <Modal
+        open={swingOpen}
+        onClose={() => setSwingOpen(false)}
+        title="TS Swing Video"
+      >
         <div className="space-y-2">
           {swingUrls.length === 0 ? (
             <div className="text-sm text-gray-500">No video</div>
           ) : (
             swingUrls.map((u, i) => (
               <div key={i} className="text-sm">
-                <a href={u} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">{u}</a>
+                <a
+                  href={u}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-indigo-600 hover:underline"
+                >
+                  {u}
+                </a>
               </div>
             ))
           )}
         </div>
       </Modal>
-      <Modal open={alertOpen} onClose={() => setAlertOpen(false)} title="Notice Alert">
+      <Modal
+        open={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        title="Notice Alert"
+      >
         <div className="rounded-xl bg-amber-50 text-amber-800 p-3 text-sm">
           {alertMsg || 'An error occurred.'}
         </div>

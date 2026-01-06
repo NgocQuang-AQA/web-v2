@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   width: 100%;
 }
@@ -18,15 +20,27 @@ html, body, #root {
 }
 
 @keyframes alert-fade-in {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes alert-fade-out {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-8px); }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
 }
 
-[role="alert"] {
+[role='alert'] {
   animation: alert-fade-in 0.5s ease forwards;
 }
 .alert-hide {
@@ -58,9 +72,49 @@ html, body, #root {
 .modal-panel {
   opacity: 1;
   transform: translateY(0) scale(1);
-  transition: opacity 220ms cubic-bezier(0.33, 1, 0.68, 1), transform 220ms cubic-bezier(0.33, 1, 0.68, 1);
+  transition:
+    opacity 220ms cubic-bezier(0.33, 1, 0.68, 1),
+    transform 220ms cubic-bezier(0.33, 1, 0.68, 1);
 }
 .modal-panel.closed {
   opacity: 0;
   transform: translateY(8px) scale(0.98);
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-xl text-sm px-3 py-2 transition;
+  }
+  .btn-primary {
+    @apply bg-indigo-600 text-white shadow-soft hover:bg-indigo-700 active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply border border-gray-300 bg-white text-gray-700 hover:bg-gray-50;
+  }
+  .btn-danger {
+    @apply bg-rose-600 text-white hover:bg-rose-700 active:scale-[0.98];
+  }
+
+  .input {
+    @apply rounded-xl border border-gray-200 px-3 py-2 text-sm;
+  }
+  .select {
+    @apply rounded-xl border border-gray-200 px-3 py-2 text-sm;
+  }
+
+  .table {
+    @apply min-w-full text-sm;
+  }
+  .table thead tr {
+    @apply text-left text-gray-600;
+  }
+  .table thead th {
+    @apply px-3 py-2;
+  }
+  .table tbody tr {
+    @apply border-t border-gray-100 hover:bg-gray-50;
+  }
+  .table tbody td {
+    @apply px-3 py-2;
+  }
 }

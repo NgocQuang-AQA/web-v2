@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose'
 
 const TestRunSchema = new mongoose.Schema(
   {
@@ -7,6 +7,6 @@ const TestRunSchema = new mongoose.Schema(
     triggeredBy: String,
   },
   { timestamps: { createdAt: true, updatedAt: true } }
-);
+)
 
-export default mongoose.model("TestRun", TestRunSchema);
+export default mongoose.model('TestRun', TestRunSchema)

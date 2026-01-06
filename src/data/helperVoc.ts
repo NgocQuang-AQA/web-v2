@@ -20,7 +20,7 @@ import flagEtc from '../assets/svg/flag/flag-etc.svg'
 export const envBase: Record<Env, string> = {
   DEV: 'https://dev-gvs-api.ggl-spazon.com',
   QA: 'https://qa-gvs-api.ggl-spazon.com',
-  LIVE: 'https://gvs-api.golfzon.com'
+  LIVE: 'https://gvs-api.golfzon.com',
 }
 
 export const flagByCode: Record<string, string> = {
@@ -39,7 +39,7 @@ export const flagByCode: Record<string, string> = {
   DEU: flagGermany,
   FRA: flagFrance,
   RUS: flagRussia,
-  CAN: flagCanada
+  CAN: flagCanada,
 }
 
 export const modeNameMap: Record<number, string> = {
@@ -101,10 +101,12 @@ export const modeNameMap: Record<number, string> = {
   133: 'GDR Pro/Max Putting HoleCup',
   134: 'training center',
   135: 'field practice & lesson',
-  136: 'Focus Field practice'
+  136: 'Focus Field practice',
 }
 
-export const highlightModeIds = new Set<number>([11, 12, 13, 27, 131, 132, 133, 134, 135])
+export const highlightModeIds = new Set<number>([
+  11, 12, 13, 27, 131, 132, 133, 134, 135,
+])
 
 export const softwareNameMap: Record<number, string> = {
   0: 'DEV',
@@ -112,14 +114,14 @@ export const softwareNameMap: Record<number, string> = {
   4: 'VISION Plus',
   5: 'TWOVISION',
   6: 'NX',
-  3: 'GDR'
+  3: 'GDR',
 }
 
 export const difficultyNameMap: Record<number, string> = {
   1: 'Pro',
   0: 'Amateur',
   2: 'Beginner',
-  3: 'Tour'
+  3: 'Tour',
 }
 
 export const unitModeNameMap: Record<number, string> = {
@@ -135,7 +137,7 @@ export const unitModeNameMap: Record<number, string> = {
   12: 'ANALYSIS_ROOM',
   14: 'PAR3_CHALLENGE',
   15: 'CTTP',
-  16: 'LONGEST'
+  16: 'LONGEST',
 }
 
 export const tabsPreview: { key: TabKey; label: string; path: string }[] = [
@@ -143,14 +145,26 @@ export const tabsPreview: { key: TabKey; label: string; path: string }[] = [
   { key: 'gs', label: 'GS', path: '/v1/helper/gs' },
   { key: 'practice', label: 'My Practice', path: '/v1/helper/my-practice' },
   { key: 'nasmo_gdr', label: 'Nasmo GDR', path: '/v1/helper/gdr-nasmo' },
-  { key: 'nasmo_gs', label: 'Nasmo GS', path: '/v1/helper/gdr-nasmo' }
+  { key: 'nasmo_gs', label: 'Nasmo GS', path: '/v1/helper/gdr-nasmo' },
 ]
 
 export const tabsReport: { key: TabKey; label: string; path: string }[] = [
-  { key: 'monthly', label: 'Monthly Report', path: '/v1/helper/user/monthly-report' },
-  { key: 'weekly', label: 'Weekly Report', path: '/v1/helper/user/weekly-report' },
+  {
+    key: 'monthly',
+    label: 'Monthly Report',
+    path: '/v1/helper/user/monthly-report',
+  },
+  {
+    key: 'weekly',
+    label: 'Weekly Report',
+    path: '/v1/helper/user/weekly-report',
+  },
   { key: 'preview', label: 'All round Holes', path: '/v1/helper/hole/report' },
-  { key: 'tour', label: 'Tour round Holes', path: '/v1/helper/hole/tour-report' }
+  {
+    key: 'tour',
+    label: 'Tour round Holes',
+    path: '/v1/helper/hole/tour-report',
+  },
 ]
 
 export const flagEtcSrc = flagEtc

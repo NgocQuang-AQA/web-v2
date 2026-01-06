@@ -13,7 +13,7 @@ const suite: TestSuite = {
   failed: 2,
   flaky: 9,
   percent: 96,
-  totalTests: 245
+  totalTests: 245,
 }
 
 test('renders suite name and stats', () => {

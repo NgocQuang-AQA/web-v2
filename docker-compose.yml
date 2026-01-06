@@ -6,14 +6,14 @@ services:
     container_name: webv2-backend
     environment:
       - MONGO_URI=mongodb://mongo:27017/webv2
-      - MONGO_DB_NAME=mydb 
+      - MONGO_DB_NAME=mydb
       - PORT=4000
       - DATA_PROVIDER=mongo
       - SERENITY_HISTORY_DIR=/mnt/d/Project/global-qa/report_history
       - SERENITY_HISTORY_DIR_CN=/mnt/d/Project/global-cn/report_history
       - FILES_DEBUG=1
     ports:
-      - "4000:4000"
+      - '4000:4000'
     volumes:
       - /mnt/d/Project/global-qa/report_history:/mnt/d/Project/global-qa/report_history:ro
       - /mnt/d/Project/global-cn/report_history:/mnt/d/Project/global-cn/report_history:ro
@@ -31,10 +31,10 @@ services:
     depends_on:
       - backend
     ports:
-      - "5173:80"
+      - '5173:80'
     networks:
       - default
-      
+
 networks:
   default:
   mongo_network:

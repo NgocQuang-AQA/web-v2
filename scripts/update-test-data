@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+VENV_PATH="$PROJECT_ROOT/tools/test-data-updater/.venv"
+PYREQ="$PROJECT_ROOT/tools/test-data-updater/requirements.txt"
+PYTOOL="$PROJECT_ROOT/tools/test-data-updater/update_test_data.py"
+
+if [ ! -d "$VENV_PATH" ]; then
+  python3 -m venv "$VENV_PATH"
+fi
+
+"$VENV_PATH/bin/python" -m pip install -r "$PYREQ" >/dev/null 2>&1 || true
+
+exec "$VENV_PATH/bin/python" "$PYTOOL" "$@"

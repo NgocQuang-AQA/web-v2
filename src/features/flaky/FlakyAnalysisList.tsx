@@ -22,7 +22,9 @@ export default function FlakyAnalysisList() {
       }
     }
     load()
-    return () => { canceled = true }
+    return () => {
+      canceled = true
+    }
   }, [])
 
   return (
@@ -34,18 +36,29 @@ export default function FlakyAnalysisList() {
         <div className="text-sm text-rose-600">{error}</div>
       ) : (
         <div className="space-y-2">
-          {items.map(f => (
-            <div key={f.id} className="flex items-center justify-between text-sm">
+          {items.map((f) => (
+            <div
+              key={f.id}
+              className="flex items-center justify-between text-sm"
+            >
               <div>
                 <div className="font-medium">{f.title}</div>
-                <div className="text-gray-500">{f.suite} • {f.failures} failures • Last: {f.lastSeen}</div>
+                <div className="text-gray-500">
+                  {f.suite} • {f.failures} failures • Last: {f.lastSeen}
+                </div>
               </div>
-              <div className="text-gray-700">{(f.trendMs/1000).toFixed(1)}s</div>
+              <div className="text-gray-700">
+                {(f.trendMs / 1000).toFixed(1)}s
+              </div>
             </div>
           ))}
           {items.length === 0 && (
             <div className="relative w-full flex items-center justify-center py-6">
-              <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+              <img
+                src={NoData}
+                alt="No data"
+                className="max-h-64 w-auto object-contain opacity-80 rounded-xl"
+              />
             </div>
           )}
         </div>

@@ -12,7 +12,11 @@ export default function UserSummary({ user, flagSrc, onCopy }: Props) {
     <div className="mb-3 rounded-xl border border-gray-100 bg-white px-4 py-3">
       <div className="flex items=center justify-between">
         <div className="flex items-center gap-4">
-          <img src={flagSrc} alt="flag" className="w-5 h-5 rounded-full ring-1 ring-gray-200" />
+          <img
+            src={flagSrc}
+            alt="flag"
+            className="w-5 h-5 rounded-full ring-1 ring-gray-200"
+          />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-2">
             <div className="flex items-center gap-2">
               <div className="text-sm font-medium text-gray-700">User No</div>
@@ -27,12 +31,14 @@ export default function UserSummary({ user, flagSrc, onCopy }: Props) {
             <div className="flex items-center gap-2">
               <div className="text-sm font-medium text-gray-700">Nick Name</div>
               <span className="text-gray-300">•</span>
-              <div className="text-sm text-gray-900 truncate max-w-[180px] md:max-w-[220px]">{user.userNickname}</div>
+              <div className="text-sm text-gray-900 truncate max-w-[180px] md:max-w-[220px]">
+                {user.userNickname}
+              </div>
             </div>
           </div>
         </div>
         <button
-          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 text-white text-sm px-3 py-2 shadow-soft hover:bg-indigo-700 active:scale-[0.98] transition"
+          className="btn btn-primary"
           onClick={onCopy}
           aria-label="Copy gzsession"
           title="Copy"

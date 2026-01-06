@@ -3,7 +3,14 @@ import { apiFetch } from '../../lib/api'
 import Loading from '../../components/Loading'
 import NoData from '../../assets/no-data-found_585024-42.avif'
 
-type Row = { id?: string; time?: string; from?: string; content?: string; session?: string; modelVersion?: string }
+type Row = {
+  id?: string
+  time?: string
+  from?: string
+  content?: string
+  session?: string
+  modelVersion?: string
+}
 
 export default function ChatDock() {
   const [input, setInput] = useState('')
@@ -18,7 +25,11 @@ export default function ChatDock() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
       const items = Array.isArray(json?.items) ? (json.items as Row[]) : []
-      setRows(session ? items.filter(r => String(r.session || '') === session) : items)
+      setRows(
+        session
+          ? items.filter((r) => String(r.session || '') === session)
+          : items
+      )
     } catch (e) {
       setError(String(e))
     }
@@ -62,7 +73,7 @@ export default function ChatDock() {
       const res = await apiFetch('/api/chat/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json = await res.json()
@@ -116,22 +127,33 @@ export default function ChatDock() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') send() }}
-          className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') send()
+          }}
+          className="flex-1 input"
           placeholder="Type message or use quick actions..."
         />
         <button
-          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 text-white text-sm px-3 py-2 shadow-soft hover:bg-indigo-700 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           type="submit"
-
           onClick={send}
           disabled={sending || input.trim().length === 0}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-4 h-4"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
+            />
           </svg>
           <span className="font-medium">Send</span>
-
         </button>
       </div>
       <div className="rounded-2xl bg-white shadow-soft p-3 space-y-3">
@@ -142,8 +164,14 @@ export default function ChatDock() {
         )}
         {!sending && rows.length === 0 && (
           <div className="flex flex-col items-center justify-center py-8">
-            <img src={NoData} alt="No data" className="w-32 h-32 object-contain opacity-80" />
-            <div className="mt-2 text-sm text-gray-500">No chat yet. Send a message or select a session below.</div>
+            <img
+              src={NoData}
+              alt="No data"
+              className="w-32 h-32 object-contain opacity-80"
+            />
+            <div className="mt-2 text-sm text-gray-500">
+              No chat yet. Send a message or select a session below.
+            </div>
           </div>
         )}
         {(() => {
@@ -180,12 +208,20 @@ export default function ChatDock() {
             <>
               {msgs.map((m, idx) => {
                 const isUser = String(m.from || '').toLowerCase() === 'user'
-                const label = isUser ? 'Admin' : (m.modelVersion || 'Gemini')
+                const label = isUser ? 'Admin' : m.modelVersion || 'Gemini'
                 return (
                   <div key={m.id || String(idx)} className="space-y-1">
-                    <div className={`text-xs text-gray-500 ${isUser ? 'text-right' : ''}`}>{label} • {fmtTime(m.time)}</div>
-                    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] px-3 py-2 rounded-xl text-sm whitespace-pre-wrap break-words ${isUser ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-800'}`}>
+                    <div
+                      className={`text-xs text-gray-500 ${isUser ? 'text-right' : ''}`}
+                    >
+                      {label} • {fmtTime(m.time)}
+                    </div>
+                    <div
+                      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[80%] px-3 py-2 rounded-xl text-sm whitespace-pre-wrap break-words ${isUser ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-800'}`}
+                      >
                         {renderBoldMarkdown(m.content || '')}
                       </div>
                     </div>

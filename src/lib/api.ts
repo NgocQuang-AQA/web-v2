@@ -1,6 +1,7 @@
 export function apiUrl(path: string): string {
   const rawPath = String(path || '').trim()
-  if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) return rawPath
+  if (rawPath.startsWith('http://') || rawPath.startsWith('https://'))
+    return rawPath
 
   const p = rawPath.startsWith('/') ? rawPath : `/${rawPath}`
 
@@ -12,7 +13,9 @@ export function apiUrl(path: string): string {
     return p
   }
 
-  const baseNoTrailingSlash = baseTrimmed.endsWith('/') ? baseTrimmed.slice(0, -1) : baseTrimmed
+  const baseNoTrailingSlash = baseTrimmed.endsWith('/')
+    ? baseTrimmed.slice(0, -1)
+    : baseTrimmed
   return `${baseNoTrailingSlash}${p}`
 }
 
@@ -24,22 +27,37 @@ const REMEMBER_USERNAME_KEY = 'remember_me_username'
 
 export function getAuthToken(): string {
   return (
-    (typeof localStorage !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null) ||
-    (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(AUTH_TOKEN_KEY) : null) ||
+    (typeof localStorage !== 'undefined'
+      ? localStorage.getItem(AUTH_TOKEN_KEY)
+      : null) ||
+    (typeof sessionStorage !== 'undefined'
+      ? sessionStorage.getItem(AUTH_TOKEN_KEY)
+      : null) ||
     ''
   )
 }
 
 export function getAuthRole(): string {
-  return (typeof localStorage !== 'undefined' ? localStorage.getItem(AUTH_ROLE_KEY) : '') || 'Guest'
+  return (
+    (typeof localStorage !== 'undefined'
+      ? localStorage.getItem(AUTH_ROLE_KEY)
+      : '') || 'Guest'
+  )
 }
 
 export function getAuthUsername(): string {
-  return (typeof localStorage !== 'undefined' ? localStorage.getItem(AUTH_USERNAME_KEY) : '') || 'User'
+  return (
+    (typeof localStorage !== 'undefined'
+      ? localStorage.getItem(AUTH_USERNAME_KEY)
+      : '') || 'User'
+  )
 }
 
 export function getAuthMenus(): string[] {
-  const raw = (typeof localStorage !== 'undefined' ? localStorage.getItem(AUTH_MENUS_KEY) : null) || ''
+  const raw =
+    (typeof localStorage !== 'undefined'
+      ? localStorage.getItem(AUTH_MENUS_KEY)
+      : null) || ''
   if (!raw) return []
   try {
     const v = JSON.parse(raw)
@@ -85,15 +103,22 @@ export function clearAuth(): void {
   localStorage.removeItem(AUTH_MENUS_KEY)
 }
 
-export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+export async function apiFetch(
+  path: string,
+  init?: RequestInit
+): Promise<Response> {
   const url = apiUrl(path)
   const token = getAuthToken()
   const headers = new Headers(init?.headers || {})
-  if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`)
+  if (token && !headers.has('Authorization'))
+    headers.set('Authorization', `Bearer ${token}`)
   return fetch(url, { ...init, headers })
 }
 
-export async function apiJson<T>(path: string, init?: RequestInit): Promise<T | null> {
+export async function apiJson<T>(
+  path: string,
+  init?: RequestInit
+): Promise<T | null> {
   try {
     const res = await apiFetch(path, init)
     if (!res.ok) return null

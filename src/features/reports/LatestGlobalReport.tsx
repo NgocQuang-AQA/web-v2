@@ -5,16 +5,34 @@ import NoData from '../../assets/no-data-found_585024-42.avif'
 import { apiFetch } from '../../lib/api'
 
 type Summary = {
-  counts: { passed: number; failed: number; broken: number; skipped: number; unknown: number }
+  counts: {
+    passed: number
+    failed: number
+    broken: number
+    skipped: number
+    unknown: number
+  }
   total: number
   percent: number
 }
 
-type Latest = { id?: string; _id?: string; name?: string; path?: string; time_insert?: string }
+type Latest = {
+  id?: string
+  _id?: string
+  name?: string
+  path?: string
+  time_insert?: string
+}
 
 export default function LatestGlobalReport() {
-  const [qa, setQa] = useState<{ latest: Latest | null; summary: Summary | null } | null>(null)
-  const [cn, setCn] = useState<{ latest: Latest | null; summary: Summary | null } | null>(null)
+  const [qa, setQa] = useState<{
+    latest: Latest | null
+    summary: Summary | null
+  } | null>(null)
+  const [cn, setCn] = useState<{
+    latest: Latest | null
+    summary: Summary | null
+  } | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,7 +44,10 @@ export default function LatestGlobalReport() {
       try {
         const res = await apiFetch('/api/files/latest-summary')
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const data: { qa?: { latest: Latest | null; summary: Summary | null }; cn?: { latest: Latest | null; summary: Summary | null } } = await res.json()
+        const data: {
+          qa?: { latest: Latest | null; summary: Summary | null }
+          cn?: { latest: Latest | null; summary: Summary | null }
+        } = await res.json()
         if (!canceled) {
           setQa(data.qa || null)
           setCn(data.cn || null)
@@ -38,7 +59,9 @@ export default function LatestGlobalReport() {
       }
     }
     load()
-    return () => { canceled = true }
+    return () => {
+      canceled = true
+    }
   }, [])
 
   const formatTime = (v?: string) => {
@@ -54,33 +77,63 @@ export default function LatestGlobalReport() {
   if (!qa && !cn) {
     return (
       <div className="relative w-full flex items-center justify-center py-6">
-        <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+        <img
+          src={NoData}
+          alt="No data"
+          className="max-h-64 w-auto object-contain opacity-80 rounded-xl"
+        />
       </div>
     )
   }
 
-  const renderCard = (pair: { latest: Latest | null; summary: Summary | null } | null, fallbackTitle: string) => {
+  const renderCard = (
+    pair: { latest: Latest | null; summary: Summary | null } | null,
+    fallbackTitle: string
+  ) => {
     if (!pair || !pair.latest || !pair.summary) {
       return (
         <div className="relative w-full flex items-center justify-center py-6">
-          <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+          <img
+            src={NoData}
+            alt="No data"
+            className="max-h-64 w-auto object-contain opacity-80 rounded-xl"
+          />
         </div>
       )
     }
-    const t: 'success' | 'warning' | 'danger' = pair.summary.percent >= 95 ? 'success' : pair.summary.percent >= 80 ? 'warning' : 'danger'
+    const t: 'success' | 'warning' | 'danger' =
+      pair.summary.percent >= 95
+        ? 'success'
+        : pair.summary.percent >= 80
+          ? 'warning'
+          : 'danger'
     return (
       <div className="rounded-2xl bg-white shadow-soft p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className={`text-xs px-2 py-0.5 rounded-full ${t === 'success' ? 'bg-green-100 text-green-700' : t === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}`}>{t}</span>
-            <div className="font-medium">{pair.latest.name || fallbackTitle}</div>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full ${t === 'success' ? 'bg-green-100 text-green-700' : t === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}`}
+            >
+              {t}
+            </span>
+            <div className="font-medium">
+              {pair.latest.name || fallbackTitle}
+            </div>
           </div>
-          <div className="text-xs text-gray-500">{formatTime(pair.latest.time_insert)}</div>
+          <div className="text-xs text-gray-500">
+            {formatTime(pair.latest.time_insert)}
+          </div>
         </div>
         <div className="mt-3 flex items-center justify-between text-sm">
-          <div className="text-green-700">{pair.summary.counts.passed} Passing</div>
-          <div className="text-rose-700">{pair.summary.counts.failed} Failed</div>
-          <div className="text-amber-700">{pair.summary.counts.broken} Broken/Flaky</div>
+          <div className="text-green-700">
+            {pair.summary.counts.passed} Passing
+          </div>
+          <div className="text-rose-700">
+            {pair.summary.counts.failed} Failed
+          </div>
+          <div className="text-amber-700">
+            {pair.summary.counts.broken} Broken/Flaky
+          </div>
           <div className="text-gray-500">{pair.summary.percent}%</div>
           <div className="text-gray-500">{pair.summary.total} tests</div>
         </div>

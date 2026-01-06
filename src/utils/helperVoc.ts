@@ -1,20 +1,40 @@
 import type { Env } from '../models/helperVoc'
 import { sendLog } from '../lib/logger'
-import { modeNameMap, unitModeNameMap, highlightModeIds, softwareNameMap, difficultyNameMap } from '../data/helperVoc'
+import {
+  modeNameMap,
+  unitModeNameMap,
+  highlightModeIds,
+  softwareNameMap,
+  difficultyNameMap,
+} from '../data/helperVoc'
 
 export async function fetchJson<T>(url: string): Promise<T | null> {
   try {
     const res = await fetch(url)
-    void sendLog({ level: 'info', message: 'VOC API Call', source: 'HelperVoc', meta: { url } })
+    void sendLog({
+      level: 'info',
+      message: 'VOC API Call',
+      source: 'HelperVoc',
+      meta: { url },
+    })
     if (!res.ok) return null
     return await res.json()
   } catch {
-    void sendLog({ level: 'error', message: 'VOC API Error', source: 'HelperVoc', meta: { url } })
+    void sendLog({
+      level: 'error',
+      message: 'VOC API Error',
+      source: 'HelperVoc',
+      meta: { url },
+    })
     return null
   }
 }
 
-export function extractRows(json: unknown): { rows: Record<string, unknown>[]; total?: number; totalPages?: number } {
+export function extractRows(json: unknown): {
+  rows: Record<string, unknown>[]
+  total?: number
+  totalPages?: number
+} {
   if (!json || typeof json !== 'object') return { rows: [] }
   const j = json as Record<string, unknown>
   const dataUnknown = j.data as unknown
@@ -28,26 +48,35 @@ export function extractRows(json: unknown): { rows: Record<string, unknown>[]; t
     if (Array.isArray(j.items)) rowsUnknown = j.items
     else if (Array.isArray(j.list)) rowsUnknown = j.list
   }
-  const rows = Array.isArray(rowsUnknown) ? (rowsUnknown as Record<string, unknown>[]) : []
-  const dataObj = dataUnknown && typeof dataUnknown === 'object' ? (dataUnknown as Record<string, unknown>) : undefined
-  const totalItems = typeof dataObj?.totalItems === 'number' ? (dataObj!.totalItems as number) : undefined
+  const rows = Array.isArray(rowsUnknown)
+    ? (rowsUnknown as Record<string, unknown>[])
+    : []
+  const dataObj =
+    dataUnknown && typeof dataUnknown === 'object'
+      ? (dataUnknown as Record<string, unknown>)
+      : undefined
+  const totalItems =
+    typeof dataObj?.totalItems === 'number'
+      ? (dataObj!.totalItems as number)
+      : undefined
   const total =
     typeof j.total === 'number'
       ? (j.total as number)
       : typeof dataObj?.total === 'number'
-      ? (dataObj!.total as number)
-      : typeof totalItems === 'number'
-      ? totalItems
-      : undefined
-  const size = typeof dataObj?.size === 'number' ? (dataObj!.size as number) : undefined
+        ? (dataObj!.total as number)
+        : typeof totalItems === 'number'
+          ? totalItems
+          : undefined
+  const size =
+    typeof dataObj?.size === 'number' ? (dataObj!.size as number) : undefined
   const totalPages =
     typeof j.totalPages === 'number'
       ? (j.totalPages as number)
       : typeof dataObj?.totalPages === 'number'
-      ? (dataObj!.totalPages as number)
-      : typeof totalItems === 'number' && typeof size === 'number' && size > 0
-      ? Math.max(1, Math.ceil(totalItems / size))
-      : undefined
+        ? (dataObj!.totalPages as number)
+        : typeof totalItems === 'number' && typeof size === 'number' && size > 0
+          ? Math.max(1, Math.ceil(totalItems / size))
+          : undefined
   return { rows, total, totalPages }
 }
 
@@ -126,7 +155,7 @@ export function toLabel(key: string): string {
     distance: 'Distance',
     gallery_yn: 'Gallery Yn',
     store_yn: 'Store Yn',
-    is_enc: 'Is Enc'
+    is_enc: 'Is Enc',
   }
   return m[key] || key
 }
@@ -179,7 +208,10 @@ export function getModeName(row: Record<string, unknown>): string {
       if (uName) return uName
     }
   }
-  const v = (row as Record<string, unknown>).pg_mode ?? (row as Record<string, unknown>).mode_id ?? (row as Record<string, unknown>).modeId
+  const v =
+    (row as Record<string, unknown>).pg_mode ??
+    (row as Record<string, unknown>).mode_id ??
+    (row as Record<string, unknown>).modeId
   let n: number | null = null
   if (typeof v === 'number') n = v
   else if (typeof v === 'string') {
@@ -190,14 +222,18 @@ export function getModeName(row: Record<string, unknown>): string {
     const m = modeNameMap[n]
     if (m) return m
   }
-  const raw = ((row as Record<string, unknown>).modeName ?? (row as Record<string, unknown>).mode_name) as unknown
+  const raw = ((row as Record<string, unknown>).modeName ??
+    (row as Record<string, unknown>).mode_name) as unknown
   if (typeof raw === 'string') return raw
   if (typeof raw === 'number') return String(raw)
   return ''
 }
 
 export function shouldHighlightMode(row: Record<string, unknown>): boolean {
-  const v = (row as Record<string, unknown>).pg_mode ?? (row as Record<string, unknown>).mode_id ?? (row as Record<string, unknown>).modeId
+  const v =
+    (row as Record<string, unknown>).pg_mode ??
+    (row as Record<string, unknown>).mode_id ??
+    (row as Record<string, unknown>).modeId
   let n: number | null = null
   if (typeof v === 'number') n = v
   else if (typeof v === 'string') {
@@ -209,7 +245,10 @@ export function shouldHighlightMode(row: Record<string, unknown>): boolean {
 }
 
 export function getSystemName(row: Record<string, unknown>): string {
-  const v = (row as Record<string, unknown>).mode_id ?? (row as Record<string, unknown>).modeId ?? (row as Record<string, unknown>).pg_mode
+  const v =
+    (row as Record<string, unknown>).mode_id ??
+    (row as Record<string, unknown>).modeId ??
+    (row as Record<string, unknown>).pg_mode
   let n: number | null = null
   if (typeof v === 'number') n = v
   else if (typeof v === 'string') {
@@ -286,7 +325,7 @@ export function getTourTitle(v: unknown): string {
     2: 'Holes (R)',
     4: 'Holes (V)',
     5: 'Holes (TV)',
-    6: 'Holes (TVNX)'
+    6: 'Holes (TVNX)',
   }
   if (code != null && map[code]) return map[code]
   if (typeof v === 'string') return v
@@ -309,18 +348,24 @@ export function toLabelPractice(key: string): string {
     ts_approach: 'TS Approach',
     td_driving_range: 'TD Driving Range',
     td_approach: 'TD Approach',
-    td_putting: 'TD Putting'
+    td_putting: 'TD Putting',
   }
   return m[key] || key
 }
 
-export function getSwingVideoUrls(row: Record<string, unknown>, env: Env): string[] {
+export function getSwingVideoUrls(
+  row: Record<string, unknown>,
+  env: Env
+): string[] {
   const getBase = (e: Env, override?: unknown): string => {
     let prefix = ''
     if (typeof override === 'string' && override.trim()) {
       prefix = override.trim().replace(/\/+$/, '')
     } else {
-      prefix = e === 'LIVE' ? 'https://myswing.global.golfzon.com' : 'https://d1s8tcbaei6x6b.cloudfront.net'
+      prefix =
+        e === 'LIVE'
+          ? 'https://myswing.global.golfzon.com'
+          : 'https://d1s8tcbaei6x6b.cloudfront.net'
     }
     return `${prefix}/movie_web/new/tm`
   }
@@ -355,7 +400,15 @@ export function getSwingVideoUrls(row: Record<string, unknown>, env: Env): strin
       const g = o.g == null ? null : Number(o.g)
       const m = o.m == null ? null : Number(o.m)
       const sn = o.sn == null ? null : Number(o.sn)
-      if (g == null || Number.isNaN(g) || m == null || Number.isNaN(m) || sn == null || Number.isNaN(sn)) continue
+      if (
+        g == null ||
+        Number.isNaN(g) ||
+        m == null ||
+        Number.isNaN(m) ||
+        sn == null ||
+        Number.isNaN(sn)
+      )
+        continue
       const name = `${code}_${g}${m}_${sn}.mp4`
       urls.push(`${base}/${datePath}/${name}`)
     }
@@ -375,13 +428,22 @@ export function getSwingVideoUrls(row: Record<string, unknown>, env: Env): strin
           const urls = buildFromObjects(parsed as unknown[])
           if (urls.length) return urls
         }
-      } catch { void 0 }
+      } catch {
+        void 0
+      }
     }
   }
-  const fallbackKeys = ['ts_swing_video_urls', 'swing_video_urls', 'sv_urls', 'video_urls', 'video_url']
+  const fallbackKeys = [
+    'ts_swing_video_urls',
+    'swing_video_urls',
+    'sv_urls',
+    'video_urls',
+    'video_url',
+  ]
   for (const key of fallbackKeys) {
     const val = (row as Record<string, unknown>)[key]
-    if (Array.isArray(val)) return (val as unknown[]).map((x) => String(x)).filter((x) => !!x)
+    if (Array.isArray(val))
+      return (val as unknown[]).map((x) => String(x)).filter((x) => !!x)
     if (typeof val === 'string') {
       const s = val.trim()
       if (!s) continue
@@ -391,7 +453,10 @@ export function getSwingVideoUrls(row: Record<string, unknown>, env: Env): strin
           return (parsed as unknown[]).map((x) => String(x)).filter((x) => !!x)
         }
       } catch {
-        const parts = s.split(/[,\s]+/).map((x) => x.trim()).filter((x) => !!x)
+        const parts = s
+          .split(/[,\s]+/)
+          .map((x) => x.trim())
+          .filter((x) => !!x)
         if (parts.length) return parts
       }
     }

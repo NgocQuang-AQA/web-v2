@@ -23,7 +23,9 @@ export default function SuiteList() {
       }
     }
     load()
-    return () => { canceled = true }
+    return () => {
+      canceled = true
+    }
   }, [])
 
   if (loading) return <Loading />
@@ -31,10 +33,16 @@ export default function SuiteList() {
 
   return (
     <div className="space-y-3">
-      {items.map(s => <SuiteRow key={s.id} suite={s} />)}
+      {items.map((s) => (
+        <SuiteRow key={s.id} suite={s} />
+      ))}
       {items.length === 0 && (
         <div className="relative w-full flex items-center justify-center py-6">
-          <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+          <img
+            src={NoData}
+            alt="No data"
+            className="max-h-64 w-auto object-contain opacity-80 rounded-xl"
+          />
         </div>
       )}
     </div>

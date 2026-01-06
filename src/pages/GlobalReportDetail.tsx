@@ -39,7 +39,9 @@ export default function GlobalReportDetail() {
       }
     }
     load()
-    return () => { canceled = true }
+    return () => {
+      canceled = true
+    }
   }, [collection, id])
 
   const fmtTime = (v?: string) => {
@@ -50,7 +52,9 @@ export default function GlobalReportDetail() {
     return `${pad(d.getUTCDate())}-${pad(d.getUTCMonth() + 1)}-${d.getUTCFullYear()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
   }
 
-  const src = id ? apiUrl(`/api/files/${collection}/${id}/static/index.html`) : ''
+  const src = id
+    ? apiUrl(`/api/files/${collection}/${id}/static/index.html`)
+    : ''
   const fallbackTitle = (() => {
     if (collection === 'cn-qa') return 'GlobalCN QA Report'
     if (collection === 'cn-live') return 'GlobalCN Live Report'
@@ -64,13 +68,19 @@ export default function GlobalReportDetail() {
         <div className="rounded-2xl bg-white shadow-soft p-4">
           <div className="flex items-center justify-between">
             <div className="font-semibold">{doc?.name || fallbackTitle}</div>
-            <div className="text-xs text-gray-500">{fmtTime(doc?.time_insert)}</div>
+            <div className="text-xs text-gray-500">
+              {fmtTime(doc?.time_insert)}
+            </div>
           </div>
           {loading && <Loading />}
           {error && <div className="text-sm text-rose-600 mt-2">{error}</div>}
         </div>
         <div className="rounded-2xl bg-white shadow-soft p-4">
-          <iframe title="Serenity Report" src={src} className="w-full h-[75vh] rounded-xl border" />
+          <iframe
+            title="Serenity Report"
+            src={src}
+            className="w-full h-[75vh] rounded-xl border"
+          />
         </div>
       </div>
     </AppLayout>

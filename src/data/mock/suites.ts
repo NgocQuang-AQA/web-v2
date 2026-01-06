@@ -11,7 +11,7 @@ export const suites: TestSuite[] = [
     failed: 2,
     flaky: 9,
     percent: 96,
-    totalTests: 245
+    totalTests: 245,
   },
   {
     id: 'ui',
@@ -23,7 +23,7 @@ export const suites: TestSuite[] = [
     failed: 8,
     flaky: 3,
     percent: 85,
-    totalTests: 89
+    totalTests: 89,
   },
   {
     id: 'e2e',
@@ -35,6 +35,6 @@ export const suites: TestSuite[] = [
     failed: 4,
     flaky: 2,
     percent: 82,
-    totalTests: 34
-  }
+    totalTests: 34,
+  },
 ]

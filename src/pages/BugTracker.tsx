@@ -6,14 +6,29 @@ import Loading from '../components/Loading'
 import NoData from '../assets/no-data-found_585024-42.avif'
 import { apiFetch } from '../lib/api'
 
-type Breakdown = { qaError: number; cnError: number; qaFail: number; cnFail: number }
+type Breakdown = {
+  qaError: number
+  cnError: number
+  qaFail: number
+  cnFail: number
+}
 type RootCauseBySource = { qa: string[]; cn: string[] }
-type ExBySource = { qa: Record<string, unknown> | null; cn: Record<string, unknown> | null }
-type ApiResponse = { totalError: number; totalFail: number; breakdown: Breakdown; rootCause: RootCauseBySource; ex: ExBySource }
+type ExBySource = {
+  qa: Record<string, unknown> | null
+  cn: Record<string, unknown> | null
+}
+type ApiResponse = {
+  totalError: number
+  totalFail: number
+  breakdown: Breakdown
+  rootCause: RootCauseBySource
+  ex: ExBySource
+}
 
 function toList(v: unknown): string[] {
   if (Array.isArray(v)) return v.map(String)
-  if (v && typeof v === 'object') return Object.keys(v as Record<string, unknown>)
+  if (v && typeof v === 'object')
+    return Object.keys(v as Record<string, unknown>)
   return []
 }
 
@@ -41,7 +56,9 @@ export default function BugTracker() {
       }
     }
     load()
-    return () => { canceled = true }
+    return () => {
+      canceled = true
+    }
   }, [])
 
   const qaRoot = useMemo(() => data?.rootCause.qa || [], [data])
@@ -50,11 +67,20 @@ export default function BugTracker() {
   const exQa = useMemo(() => (data?.ex.qa ? data.ex.qa : {}), [data])
   const exCn = useMemo(() => (data?.ex.cn ? data.ex.cn : {}), [data])
 
-  const renderRootList = (roots: string[], exMap: Record<string, unknown>, expanded: Record<string, boolean>, setExpanded: (f: Record<string, boolean>) => void) => {
+  const renderRootList = (
+    roots: string[],
+    exMap: Record<string, unknown>,
+    expanded: Record<string, boolean>,
+    setExpanded: (f: Record<string, boolean>) => void
+  ) => {
     if (!roots.length) {
       return (
         <div className="relative w-full flex items-center justify-center py-6">
-          <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+          <img
+            src={NoData}
+            alt="No data"
+            className="max-h-64 w-auto object-contain opacity-80 rounded-xl"
+          />
         </div>
       )
     }
@@ -66,9 +92,14 @@ export default function BugTracker() {
           const items = toList(exVal)
           return (
             <div key={r} className="rounded-xl border border-gray-200 bg-white">
-              <button className="w-full flex items-center justify-between px-3 py-2" onClick={() => setExpanded({ ...expanded, [r]: !isOpen })}>
+              <button
+                className="w-full flex items-center justify-between px-3 py-2"
+                onClick={() => setExpanded({ ...expanded, [r]: !isOpen })}
+              >
                 <div className="text-sm font-medium text-gray-800">{r}</div>
-                <div className="text-xs text-gray-500">{isOpen ? 'Hide' : 'View examples'}</div>
+                <div className="text-xs text-gray-500">
+                  {isOpen ? 'Hide' : 'View examples'}
+                </div>
               </button>
               {isOpen && (
                 <div className="px-3 pb-3">
@@ -102,20 +133,40 @@ export default function BugTracker() {
             <div className="text-sm text-rose-600">{error}</div>
           ) : data ? (
             <div className="grid grid-cols-2 gap-3">
-              <StatCard label="Total Error" value={String(data.totalError)} tone="danger" />
-              <StatCard label="Total Fail" value={String(data.totalFail)} tone="warning" />
+              <StatCard
+                label="Total Error"
+                value={String(data.totalError)}
+                tone="danger"
+              />
+              <StatCard
+                label="Total Fail"
+                value={String(data.totalFail)}
+                tone="warning"
+              />
             </div>
           ) : (
             <div className="relative w-full flex items-center justify-center py-6">
-              <img src={NoData} alt="No data" className="max-h-64 w-auto object-contain opacity-80 rounded-xl" />
+              <img
+                src={NoData}
+                alt="No data"
+                className="max-h-64 w-auto object-contain opacity-80 rounded-xl"
+              />
             </div>
           )}
           {data && (
             <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
-              <span className="rounded-full bg-rose-50 text-rose-700 px-2 py-0.5">QA Error: {data.breakdown.qaError}</span>
-              <span className="rounded-full bg-rose-50 text-rose-700 px-2 py-0.5">CN Error: {data.breakdown.cnError}</span>
-              <span className="rounded-full bg-amber-50 text-amber-700 px-2 py-0.5">QA Fail: {data.breakdown.qaFail}</span>
-              <span className="rounded-full bg-amber-50 text-amber-700 px-2 py-0.5">CN Fail: {data.breakdown.cnFail}</span>
+              <span className="rounded-full bg-rose-50 text-rose-700 px-2 py-0.5">
+                QA Error: {data.breakdown.qaError}
+              </span>
+              <span className="rounded-full bg-rose-50 text-rose-700 px-2 py-0.5">
+                CN Error: {data.breakdown.cnError}
+              </span>
+              <span className="rounded-full bg-amber-50 text-amber-700 px-2 py-0.5">
+                QA Fail: {data.breakdown.qaFail}
+              </span>
+              <span className="rounded-full bg-amber-50 text-amber-700 px-2 py-0.5">
+                CN Fail: {data.breakdown.cnFail}
+              </span>
             </div>
           )}
         </div>
@@ -123,11 +174,21 @@ export default function BugTracker() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="rounded-2xl bg-white shadow-soft p-4">
             <div className="font-semibold mb-2">Top Root Causes • QA</div>
-            {renderRootList(qaRoot, exQa as Record<string, unknown>, expandedQa, setExpandedQa)}
+            {renderRootList(
+              qaRoot,
+              exQa as Record<string, unknown>,
+              expandedQa,
+              setExpandedQa
+            )}
           </div>
           <div className="rounded-2xl bg-white shadow-soft p-4">
             <div className="font-semibold mb-2">Top Root Causes • CN</div>
-            {renderRootList(cnRoot, exCn as Record<string, unknown>, expandedCn, setExpandedCn)}
+            {renderRootList(
+              cnRoot,
+              exCn as Record<string, unknown>,
+              expandedCn,
+              setExpandedCn
+            )}
           </div>
         </div>
       </div>

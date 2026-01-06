@@ -33,11 +33,15 @@ function TestHistoryPanel() {
       setLoading(true)
       setError(null)
       try {
-        const res = await apiFetch(`/api/reports/history?page=${page}&pageSize=${page === 1 ? 4 : 5}`)
+        const res = await apiFetch(
+          `/api/reports/history?page=${page}&pageSize=${page === 1 ? 4 : 5}`
+        )
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const json = await res.json()
         if (!canceled) {
-          const next = Array.isArray(json?.items) ? (json.items as HistorySession[]) : []
+          const next = Array.isArray(json?.items)
+            ? (json.items as HistorySession[])
+            : []
           setItems(page === 1 ? next : [...items, ...next])
           setHasMore(next.length > 0)
         }
@@ -48,7 +52,9 @@ function TestHistoryPanel() {
       }
     }
     load()
-    return () => { canceled = true }
+    return () => {
+      canceled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
 
@@ -95,31 +101,40 @@ function TestHistoryPanel() {
 
   const firstUser = (msgs: HistoryMessage[] | undefined) => {
     if (!Array.isArray(msgs)) return null
-    return msgs.find(m => String(m.from || '').toLowerCase() === 'user') || null
+    return (
+      msgs.find((m) => String(m.from || '').toLowerCase() === 'user') || null
+    )
   }
 
   const firstGemini = (msgs: HistoryMessage[] | undefined) => {
     if (!Array.isArray(msgs)) return null
-    return msgs.find(m => String(m.from || '').toLowerCase() === 'gemini') || null
+    return (
+      msgs.find((m) => String(m.from || '').toLowerCase() === 'gemini') || null
+    )
   }
 
   const onClickSession = (it: HistorySession) => {
     const msgs = sortMessages(it.messages)
-    const rows = msgs.map(m => ({ ...m, session: it.session }))
-    window.dispatchEvent(new CustomEvent('chat:load-session', { detail: { rows } }))
+    const rows = msgs.map((m) => ({ ...m, session: it.session }))
+    window.dispatchEvent(
+      new CustomEvent('chat:load-session', { detail: { rows } })
+    )
   }
 
   const sentinelRef = (el: HTMLDivElement | null) => {
     if (!el) return
-    const io = new IntersectionObserver((entries) => {
-      for (const e of entries) {
-        if (e.isIntersecting) {
-          io.disconnect()
-          if (!loading && hasMore) setPage((p) => p + 1)
-          break
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            io.disconnect()
+            if (!loading && hasMore) setPage((p) => p + 1)
+            break
+          }
         }
-      }
-    }, { root: null, threshold: 0.1 })
+      },
+      { root: null, threshold: 0.1 }
+    )
     io.observe(el)
   }
 
@@ -145,13 +160,25 @@ function TestHistoryPanel() {
             const gemini = firstGemini(msgs)
             const title = String(user?.content || '').split('\n')[0]
             return (
-              <button key={it.session || String(idx)} className="w-full text-left rounded-xl border border-gray-100 p-3 hover:bg-gray-50" onClick={() => onClickSession(it)}>
+              <button
+                key={it.session || String(idx)}
+                className="w-full text-left rounded-xl border border-gray-100 p-3 hover:bg-gray-50"
+                onClick={() => onClickSession(it)}
+              >
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-sm font-medium text-gray-900">{title || 'New chat'}</div>
-                  {range && <div className="text-xs text-gray-500">{range}</div>}
+                  <div className="text-sm font-medium text-gray-900">
+                    {title || 'New chat'}
+                  </div>
+                  {range && (
+                    <div className="text-xs text-gray-500">{range}</div>
+                  )}
                 </div>
                 <div className="mt-1 text-xs text-gray-600">
-                  {user?.content ? preview(user.content) : (gemini?.content ? preview(gemini.content) : 'Empty session')}
+                  {user?.content
+                    ? preview(user.content)
+                    : gemini?.content
+                      ? preview(gemini.content)
+                      : 'Empty session'}
                 </div>
               </button>
             )

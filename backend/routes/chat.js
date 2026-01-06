@@ -1,148 +1,169 @@
-import { Router } from "express";
+import { Router } from 'express'
 
 export function createChatRouter({ filesRepo, reportsRepo }) {
-  const router = Router();
+  const router = Router()
 
   async function summarizeStats() {
     const sources = [
-      { name: "QA", key: "global-qa" },
-      { name: "CN", key: "cn-qa" },
-    ];
-    const parts = [];
+      { name: 'QA', key: 'global-qa' },
+      { name: 'CN', key: 'cn-qa' },
+    ]
+    const parts = []
     for (const { name, key } of sources) {
-      const items = await filesRepo.find("report-summary", { page: 1, pageSize: 1000, key });
-      let passed = 0;
-      let failed = 0;
-      let broken_flaky = 0;
+      const items = await filesRepo.find('report-summary', {
+        page: 1,
+        pageSize: 1000,
+        key,
+      })
+      let passed = 0
+      let failed = 0
+      let broken_flaky = 0
       for (const item of items) {
-        passed += Number(item.passing) || 0;
-        failed += Number(item.failed) || 0;
-        broken_flaky += Number(item.broken_flaky) || 0;
+        passed += Number(item.passing) || 0
+        failed += Number(item.failed) || 0
+        broken_flaky += Number(item.broken_flaky) || 0
       }
-      const total = passed + failed + broken_flaky;
-      const successRate = total ? Math.round((passed / total) * 100) : 0;
-      parts.push(`${name}: successRate=${successRate}%, failed=${failed}, flaky=${broken_flaky}, total=${total}`);
+      const total = passed + failed + broken_flaky
+      const successRate = total ? Math.round((passed / total) * 100) : 0
+      parts.push(
+        `${name}: successRate=${successRate}%, failed=${failed}, flaky=${broken_flaky}, total=${total}`
+      )
     }
-    return parts.join("\n");
+    return parts.join('\n')
   }
 
   async function summarizeErrorsFails() {
     const getLatest = async (col, key) => {
       try {
-        const items = await filesRepo.find(col, { page: 1, pageSize: 1, key });
-        return items[0] || null;
+        const items = await filesRepo.find(col, { page: 1, pageSize: 1, key })
+        return items[0] || null
       } catch {
-        return null;
+        return null
       }
-    };
-    const qaErrorDoc = await getLatest("report-error", "global-qa");
-    const cnErrorDoc = await getLatest("report-error", "cn-qa");
-    const qaFailDoc = await getLatest("report-fail", "global-qa");
-    const cnFailDoc = await getLatest("report-fail", "cn-qa");
+    }
+    const qaErrorDoc = await getLatest('report-error', 'global-qa')
+    const cnErrorDoc = await getLatest('report-error', 'cn-qa')
+    const qaFailDoc = await getLatest('report-fail', 'global-qa')
+    const cnFailDoc = await getLatest('report-fail', 'cn-qa')
     const toNum = (v) => {
-      const n = Number(v);
-      return Number.isFinite(n) ? n : 0;
-    };
-    const totalError = toNum(qaErrorDoc?.totalError) + toNum(cnErrorDoc?.totalError);
-    const totalFail = toNum(qaFailDoc?.totalFail) + toNum(cnFailDoc?.totalFail);
-    return `Errors/Fails: totalError=${totalError}, totalFail=${totalFail}`;
+      const n = Number(v)
+      return Number.isFinite(n) ? n : 0
+    }
+    const totalError =
+      toNum(qaErrorDoc?.totalError) + toNum(cnErrorDoc?.totalError)
+    const totalFail = toNum(qaFailDoc?.totalFail) + toNum(cnFailDoc?.totalFail)
+    return `Errors/Fails: totalError=${totalError}, totalFail=${totalFail}`
   }
 
   async function summarizeSuites() {
     try {
-      const suites = await reportsRepo.suites({ page: 1, pageSize: 20 });
-      const rows = suites.map((s) => `${s.name} status=${s.status} passed=${s.passed} failed=${s.failed} flaky=${s.flaky} percent=${s.percent}`);
-      return `Suites:\n${rows.join("\n")}`;
+      const suites = await reportsRepo.suites({ page: 1, pageSize: 20 })
+      const rows = suites.map(
+        (s) =>
+          `${s.name} status=${s.status} passed=${s.passed} failed=${s.failed} flaky=${s.flaky} percent=${s.percent}`
+      )
+      return `Suites:\n${rows.join('\n')}`
     } catch {
-      return "Suites: N/A";
+      return 'Suites: N/A'
     }
   }
 
   async function summarizeFlaky() {
     try {
-      const flaky = await reportsRepo.flaky({ page: 1, pageSize: 20 });
-      const rows = flaky.map((f) => `${f.title} failures=${f.failures} lastSeen=${f.lastSeen || ""}`);
-      return `Flaky:\n${rows.join("\n")}`;
+      const flaky = await reportsRepo.flaky({ page: 1, pageSize: 20 })
+      const rows = flaky.map(
+        (f) => `${f.title} failures=${f.failures} lastSeen=${f.lastSeen || ''}`
+      )
+      return `Flaky:\n${rows.join('\n')}`
     } catch {
-      return "Flaky: N/A";
+      return 'Flaky: N/A'
     }
   }
 
   async function buildContext() {
-    const stats = await summarizeStats();
-    const ef = await summarizeErrorsFails();
-    const suites = await summarizeSuites();
-    const flaky = await summarizeFlaky();
+    const stats = await summarizeStats()
+    const ef = await summarizeErrorsFails()
+    const suites = await summarizeSuites()
+    const flaky = await summarizeFlaky()
     return [
-      "You are a Test Automation Agent.",
+      'You are a Test Automation Agent.',
       "Use the provided dataset metrics to answer the user's question.",
-      "Base your answers strictly on the following context from test reports and files.",
-      "Be concise and factual; include numbers where helpful.",
-      "",
-      "Context:",
+      'Base your answers strictly on the following context from test reports and files.',
+      'Be concise and factual; include numbers where helpful.',
+      '',
+      'Context:',
       stats,
       ef,
       suites,
       flaky,
-    ].join("\n");
+    ].join('\n')
   }
 
-  router.get("/history", async (req, res) => {
-    const { page = 1, pageSize = 50 } = req.query;
-    const items = await filesRepo.find("his-chat", { page, pageSize, sortBy: "time_insert", order: "desc" });
-    res.json({ items });
-  });
+  router.get('/history', async (req, res) => {
+    const { page = 1, pageSize = 50 } = req.query
+    const items = await filesRepo.find('his-chat', {
+      page,
+      pageSize,
+      sortBy: 'time_insert',
+      order: 'desc',
+    })
+    res.json({ items })
+  })
 
-  router.post("/gemini", async (req, res) => {
-    const text = String(req.body?.text || "").trim();
-    if (!text) return res.status(400).json({ message: "invalid_text" });
-    const apiKey = process.env.GEMINI_API_KEY || "";
-    if (!apiKey) return res.status(500).json({ message: "missing_api_key" });
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    const contextText = await buildContext();
-    let data = null;
+  router.post('/gemini', async (req, res) => {
+    const text = String(req.body?.text || '').trim()
+    if (!text) return res.status(400).json({ message: 'invalid_text' })
+    const apiKey = process.env.GEMINI_API_KEY || ''
+    if (!apiKey) return res.status(500).json({ message: 'missing_api_key' })
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`
+    const contextText = await buildContext()
+    let data = null
     try {
       const upstream = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [
             {
-              parts: [
-                { text: contextText },
-                { text: `Question: ${text}` },
-              ],
+              parts: [{ text: contextText }, { text: `Question: ${text}` }],
             },
           ],
         }),
-      });
-      const json = await upstream.json();
-      if (!upstream.ok) return res.status(upstream.status).json(json);
-      data = json;
+      })
+      const json = await upstream.json()
+      if (!upstream.ok) return res.status(upstream.status).json(json)
+      data = json
     } catch (e) {
-      return res.status(502).json({ message: "upstream_error" });
+      return res.status(502).json({ message: 'upstream_error' })
     }
-    const responseId = String(data?.responseId || "");
-    const modelVersion = String(data?.modelVersion || "");
+    const responseId = String(data?.responseId || '')
+    const modelVersion = String(data?.modelVersion || '')
     const outText = String(
       (data?.candidates?.[0]?.content?.parts || [])
-        .map((p) => (typeof p?.text === "string" ? p.text : ""))
-        .join("\n")
-    );
-    const now = new Date().toISOString();
-    await filesRepo.insertMany("his-chat", [
-      { time: now, time_insert: now, from: "user", content: text, session: responseId, modelVersion },
+        .map((p) => (typeof p?.text === 'string' ? p.text : ''))
+        .join('\n')
+    )
+    const now = new Date().toISOString()
+    await filesRepo.insertMany('his-chat', [
+      {
+        time: now,
+        time_insert: now,
+        from: 'user',
+        content: text,
+        session: responseId,
+        modelVersion,
+      },
       {
         time: new Date().toISOString(),
         time_insert: new Date().toISOString(),
-        from: "gemini",
+        from: 'gemini',
         content: outText,
         session: responseId,
         modelVersion,
       },
-    ]);
-    res.json({ responseId, modelVersion, text: outText });
-  });
+    ])
+    res.json({ responseId, modelVersion, text: outText })
+  })
 
-  return router;
+  return router
 }

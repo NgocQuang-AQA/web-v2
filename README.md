@@ -1,72 +1,72 @@
-## 0) Cài đặt lần đầu
+## 0) First-time Setup
 
-- Yêu cầu: Docker Desktop (hoặc Docker Engine), Node.js 18+ và npm.
-- Cài dependencies:
+- Requirements: Docker Desktop (or Docker Engine), Node.js 18+ and npm.
+- Install dependencies:
 
 ```bash
 npm ci
 npm --prefix backend ci
 ```
 
-- Kiểm tra nhanh:
+- Quick check:
 
 ```bash
 npm run lint && npm run build
 ```
 
-## 1) Chạy trên máy local
+## 1) Run Locally
 
-- Khởi động Backend:
+- Start Backend:
 
 ```bash
 npm run backend:dev
 ```
 
-- Khởi động Frontend (trỏ API về backend local):
+- Start Frontend (point API to local backend):
 
 ```bash
 VITE_API_URL=http://localhost:4000 npm run dev
 ```
 
-- Truy cập: Frontend `http://localhost:5173`, Backend health `http://localhost:4000/health`.
+- Access: Frontend `http://localhost:5173`, Backend health `http://localhost:4000/health`.
 
-## 2) Đưa lên server (Windows + WSL, domain/IP 10.13.60.136)
+## 2) Deploy to Server (Windows + WSL, domain/IP 10.13.60.136)
 
-- Yêu cầu: Windows có Docker Desktop, bật WSL integration; share ổ D cho Docker.
-- Thư mục báo cáo trên host: ` /mnt/d/Project/global-cn/report_history` và ` /mnt/d/Project/global-qa/report_history`.
+- Requirements: Windows with Docker Desktop, enable WSL integration; share drive D for Docker.
+- Report folders on host: ` /mnt/d/Project/global-cn/report_history` and ` /mnt/d/Project/global-qa/report_history`.
 - Backend health check: `http://10.13.60.136:4000/health`
-- Build FE trỏ tới backend qua domain/IP và chạy stack:
+- Build FE pointing to backend via domain/IP and start the stack:
 
 ```bash
 docker compose build --build-arg VITE_API_URL=http://10.13.60.136:4000 frontend && docker compose up -d
 ```
 
-- Truy cập: Frontend `http://10.13.60.136:5173`, Backend health `http://10.13.60.136:4000/health`.
-- Dừng dịch vụ: `docker compose down`.
+- Access: Frontend `http://10.13.60.136:5173`, Backend health `http://10.13.60.136:4000/health`.
+- Stop services: `docker compose down`.
 
-### FE chạy domain khác, gọi API qua domain backend
+### Frontend on a different domain, call API via backend domain
 
-- Nếu bạn deploy FE ở domain/IP khác backend (không dùng Nginx proxy `/api/`), hãy build FE với:
+- If you deploy FE at a different domain/IP than the backend (without Nginx proxy `/api/`), build FE with:
   - `VITE_API_URL=http://10.13.60.136:4000`
-- Sau đó FE sẽ gọi API dạng:
+- Then FE will call APIs like:
   - `http://10.13.60.136:4000/api/...`
 
-## 3) Chạy trực tiếp trên Windows 11 (không Docker)
+## 3) Run directly on Windows 11 (no Docker)
 
-- Yêu cầu:
-  - Cài đặt Node.js 18+ và npm.
-  - Tùy chọn: MongoDB chạy local (nếu dùng `DATA_PROVIDER=mongo`).
-  - Mở firewall cho `TCP 4000` (backend) và `TCP 5173` (frontend dev/preview) nếu cần truy cập từ máy khác.
+- Requirements:
+  - Install Node.js 18+ and npm.
+  - Optional: Local MongoDB (if using `DATA_PROVIDER=mongo`).
+  - Open firewall for `TCP 4000` (backend) and `TCP 5173` (frontend dev/preview) if access from other machines is needed.
 
-- Cài dependencies:
+- Install dependencies:
 
 ```bash
 npm ci
 npm --prefix backend ci
 ```
 
-- Cấu hình Backend:
-  - Sẵn có `backend/.env.windows` (Windows sẽ tự nạp file này) ví dụ:
+- Backend Configuration:
+  - Provided `backend/.env.windows` (Windows auto-loads this file), example:
     - `DATA_PROVIDER=mongo`
     - `MONGO_URI=mongodb://localhost:27017`
     - `MONGO_DB_NAME=mydb`
@@ -74,37 +74,37 @@ npm --prefix backend ci
     - `FILES_DEBUG=1`
     - `SERENITY_HISTORY_DIR=D://Project//global-qa//report_history`
     - `SERENITY_HISTORY_DIR_CN=D://Project//global-cn//report_history`
-  - Backend tự động nạp `.env.windows` trên Windows. Nếu muốn, có thể đổi tên `backend/.env.windows` thành `backend/.env`.
+  - Backend automatically loads `.env.windows` on Windows. You may rename `backend/.env.windows` to `backend/.env` if preferred.
 
-- Khởi động Backend:
+- Start Backend:
 
 ```bash
 npm run backend:start
 ```
 
-- Kiểm tra:
+- Verify:
   - Health: `http://localhost:4000/health`
-  - Từ máy khác trong LAN: `http://10.13.60.136:4000/health`
+  - From another machine in LAN: `http://10.13.60.136:4000/health`
 
-- Khởi động Frontend (dev):
-  - FE gọi API qua domain backend (để truy cập từ máy khác/domain khác): set `VITE_API_URL=http://10.13.60.136:4000`
+- Start Frontend (dev):
+  - FE calls API via backend domain (to access from another machine/domain): set `VITE_API_URL=http://10.13.60.136:4000`
   - PowerShell:
 
 ```powershell
 $env:VITE_API_URL='http://10.13.60.136:4000'; npm run dev
 ```
 
-  - CMD:
+- CMD:
 
 ```cmd
 set VITE_API_URL=http://10.13.60.136:4000 && npm run dev
 ```
 
-- Truy cập:
-  - Trên server: Frontend `http://localhost:5173`
-  - Từ máy khác: Frontend `http://10.13.60.136:5173`
+- Access:
+  - On server: Frontend `http://localhost:5173`
+  - From another machine: Frontend `http://10.13.60.136:5173`
 
-- Build và preview FE trỏ về backend qua domain:
+- Build and preview FE pointing to backend via domain:
 
 ```bash
 VITE_API_URL=http://10.13.60.136:4000 npm run build && npm run preview -- --host 0.0.0.0 --port 5173

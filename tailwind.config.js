@@ -1,9 +1,5 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [
-    './index.html',
-    './src/**/*.{ts,tsx}',
-  ],
+export default {
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -11,15 +7,15 @@ module.exports = {
         warning: '#f59e0b',
         danger: '#ef4444',
         panel: '#ffffff',
-        base: '#f8fafc'
+        base: '#f8fafc',
       },
       boxShadow: {
-        soft: '0 2px 10px rgba(16,24,40,0.06)'
+        soft: '0 2px 10px rgba(16,24,40,0.06)',
       },
       borderRadius: {
-        xl: '16px'
-      }
-    }
+        xl: '16px',
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 }
