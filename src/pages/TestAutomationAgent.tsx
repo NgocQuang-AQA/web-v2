@@ -26,10 +26,12 @@ function TestHistoryPanel() {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
+  const [lastLoadedPage, setLastLoadedPage] = useState<number | null>(null)
 
   useEffect(() => {
     let canceled = false
     async function load() {
+      if (lastLoadedPage === page) return
       setLoading(true)
       setError(null)
       try {
@@ -44,6 +46,7 @@ function TestHistoryPanel() {
             : []
           setItems(page === 1 ? next : [...items, ...next])
           setHasMore(next.length > 0)
+          setLastLoadedPage(page)
         }
       } catch (e) {
         if (!canceled) setError(String(e))
@@ -57,6 +60,18 @@ function TestHistoryPanel() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
+  useEffect(() => {
+    const onReload = () => {
+      setItems([])
+      setPage(1)
+      setHasMore(true)
+      setError(null)
+    }
+    window.addEventListener('global:reload', onReload)
+    return () => {
+      window.removeEventListener('global:reload', onReload)
+    }
+  }, [])
 
   const fmtTime = (s?: string | null) => {
     if (!s) return ''

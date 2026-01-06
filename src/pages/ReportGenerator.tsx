@@ -92,6 +92,21 @@ export default function ReportGenerator() {
   const [statusFilter, setStatusFilter] = useState<
     '' | 'SUCCESS' | 'FAILURE' | 'ERROR'
   >(initStatusParam || '')
+  const initPage = Number(initParams.get('page') || '1') || 1
+  const initPageSize = Number(initParams.get('pageSize') || '5') || 5
+  const initSortBy = (initParams.get('sortBy') ||
+    'startTime') as 'startTime' | 'total' | 'passed' | 'failed' | 'broken'
+  const initSortDir = (initParams.get('sortDir') ||
+    'desc') as 'asc' | 'desc'
+  const [page, setPage] = useState(initPage)
+  const [pageSize, setPageSize] = useState(initPageSize)
+  const [sortBy, setSortBy] = useState<
+    'startTime' | 'total' | 'passed' | 'failed' | 'broken'
+  >(initSortBy)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(initSortDir)
+  const [runsTotal, setRunsTotal] = useState(0)
+  const initName = initParams.get('name') || ''
+  const [name, setName] = useState(initName)
   const statusIcon = (
     s: 'passed' | 'failed' | 'broken' | 'partial' | 'unknown' | 'error'
   ) => {
@@ -231,6 +246,40 @@ export default function ReportGenerator() {
     const s = n / 1000
     return `${s.toFixed(2)}s`
   }
+  const parseStartTime = (raw: string | undefined) => {
+    const s = String(raw || '').trim()
+    // dd-MM-YYYY HH:mm[:ss]
+    {
+      const m = s.match(
+        /^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/
+      )
+      if (m) {
+        const d = Number(m[1])
+        const mo = Number(m[2])
+        const y = Number(m[3])
+        const hh = Number(m[4])
+        const mm = Number(m[5])
+        const ss = m[6] ? Number(m[6]) : 0
+        const ts = Date.UTC(y, mo - 1, d, hh, mm, ss)
+        return { d, mo, y, hh, mm, ss, ts }
+      }
+    }
+    // YYYY-MM-DD HH-mm
+    {
+      const m = s.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2})-(\d{2})$/)
+      if (m) {
+        const y = Number(m[1])
+        const mo = Number(m[2])
+        const d = Number(m[3])
+        const hh = Number(m[4])
+        const mm = Number(m[5])
+        const ss = 0
+        const ts = Date.UTC(y, mo - 1, d, hh, mm, ss)
+        return { d, mo, y, hh, mm, ss, ts }
+      }
+    }
+    return null
+  }
   const statusTextClass = (s: string | undefined) => {
     const v = String(s || '').toUpperCase()
     if (v === 'SUCCESS' || v === 'PASSED' || v === 'PASS')
@@ -314,16 +363,31 @@ export default function ReportGenerator() {
     return sub === 'cn' ? 'cnlive' : 'cnqa'
   }, [view, sub])
   const projectParam = useMemo(() => current.collection, [current])
+  const [lastRunsKey, setLastRunsKey] = useState<string>('')
+  const [lastCasesKey, setLastCasesKey] = useState<string>('')
   useEffect(() => {
     let canceled = false
     async function loadRuns() {
+      const reqKey = JSON.stringify({
+        projectParam,
+        page,
+        pageSize,
+        name: String(name || '').trim(),
+        sortBy,
+        sortDir,
+      })
+      if (lastRunsKey === reqKey) return
+      setLastRunsKey(reqKey)
       setRunsLoading(true)
       setRunsError(null)
       const qs = new URLSearchParams({
-        page: '1',
-        pageSize: '5',
+        page: String(page),
+        pageSize: String(pageSize),
         project: projectParam,
       })
+      if (name && String(name).trim()) qs.set('name', String(name).trim())
+      if (sortBy) qs.set('sortBy', sortBy)
+      if (sortDir) qs.set('order', sortDir)
       const data = await apiJson<{ total?: number; items?: TestRunDoc[] }>(
         `/api/tests/runs?${qs.toString()}`
       )
@@ -331,7 +395,25 @@ export default function ReportGenerator() {
         const arr = Array.isArray(data?.items)
           ? (data?.items as TestRunDoc[])
           : []
-        setRunsItems(arr)
+        setRunsTotal(Number(data?.total || 0))
+        const getVal = (it: TestRunDoc) => {
+          if (sortBy === 'startTime') {
+            const p = parseStartTime(String(it.startTime || ''))
+            return Number(p?.ts || 0)
+          }
+          const sum = it.summary || {}
+          if (sortBy === 'total') return Number(sum.total || 0)
+          if (sortBy === 'passed') return Number(sum.passed || 0)
+          if (sortBy === 'failed') return Number(sum.failed || 0)
+          if (sortBy === 'broken') return Number(sum.broken || 0)
+          return 0
+        }
+        const sorted = [...arr].sort((a, b) => {
+          const va = getVal(a)
+          const vb = getVal(b)
+          return sortDir === 'asc' ? va - vb : vb - va
+        })
+        setRunsItems(sorted)
       }
       if (!canceled) setRunsLoading(false)
     }
@@ -339,11 +421,17 @@ export default function ReportGenerator() {
     return () => {
       canceled = true
     }
-  }, [projectParam, reloadEpoch])
+  }, [projectParam, reloadEpoch, page, pageSize, name, sortBy, sortDir, lastRunsKey])
   useEffect(() => {
     if (!initRunId) return
     let canceled = false
     async function initLoad() {
+      const reqKey = JSON.stringify({
+        initRunId,
+        statusFilter,
+      })
+      if (lastCasesKey === reqKey) return
+      setLastCasesKey(reqKey)
       setSelectedRunId(initRunId)
       setCasesLoading(true)
       setCasesError(null)
@@ -376,6 +464,33 @@ export default function ReportGenerator() {
       canceled = true
     }
   }, [initRunId, statusFilter])
+  useEffect(() => {
+    const onReload = async () => {
+      setReloadEpoch((x) => x + 1)
+      const rid = String(selectedRunId || initRunId || '')
+      if (!rid) return
+      setCasesLoading(true)
+      setCasesError(null)
+      setExpanded({})
+      const qs = new URLSearchParams({ runId: rid })
+      {
+        const st = mapUiStatusToApi(statusFilter)
+        if (st) qs.set('status', st)
+      }
+      const data = await apiJson<{
+        total?: number
+        items?: Record<string, unknown>
+      }>(`/api/tests/cases?${qs.toString()}`)
+      if (data && data.items) setCasesTree(data.items)
+      else setCasesTree({})
+      setCasesLoading(false)
+    }
+    window.addEventListener('global:reload', onReload as EventListener)
+    return () => {
+      window.removeEventListener('global:reload', onReload as EventListener)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRunId, initRunId, statusFilter])
 
   const updateQuery = (patch: Record<string, unknown>) => {
     const params = new URLSearchParams(location.search)
@@ -390,8 +505,6 @@ export default function ReportGenerator() {
     )
   }
 
-  const initName = initParams.get('name') || ''
-  const [name, setName] = useState(initName)
 
   const parseHeaderString = (s: unknown) => {
     const raw = String(s == null ? '' : s)
@@ -497,19 +610,13 @@ export default function ReportGenerator() {
     const res = await apiJson<RunResponse>(
       `/api/run?env=${encodeURIComponent(envParam)}`
     )
-    if (res && res.status === 'ok' && res.notice) {
-      const msg = String(res.notice.content || '').trim()
-      window.dispatchEvent(
-        new CustomEvent('global:alert', {
-          detail: { message: msg || 'Successfully triggered test run.' },
-        })
-      )
-    } else {
+    if (!(res && res.status === 'ok')) {
       window.dispatchEvent(
         new CustomEvent('global:alert', {
           detail: { message: 'Failed to trigger test run.' },
         })
       )
+      setFlag(envParam, false)
     }
     const stats = await apiJson<unknown>('/api/reports/stats')
     if (stats != null) {
@@ -518,8 +625,10 @@ export default function ReportGenerator() {
       )
     }
     setReloadEpoch((x) => x + 1)
+    window.dispatchEvent(
+      new CustomEvent('global:reload', { detail: { source: 'run', env: envParam } })
+    )
     setRunning(false)
-    setFlag(envParam, false)
   }
 
   return (
@@ -553,6 +662,7 @@ export default function ReportGenerator() {
             onSubmit={(e) => {
               e.preventDefault()
               updateQuery({ name, page: 1 })
+              setPage(1)
             }}
           >
             <input
@@ -696,22 +806,130 @@ export default function ReportGenerator() {
                   <tr>
                     <th>STT</th>
                     <th>Name</th>
-                    <th>Start Time</th>
-                    <th>Total Test</th>
-                    <th>Passed</th>
-                    <th>Failed</th>
-                    <th>Broken/Error</th>
+                    <th>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1"
+                        onClick={() => {
+                          const nextDir = sortBy === 'startTime' ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc'
+                          setSortBy('startTime')
+                          setSortDir(nextDir)
+                          updateQuery({ sortBy: 'startTime', sortDir: nextDir, page: 1 })
+                          setPage(1)
+                        }}
+                      >
+                        <span>Start Time</span>
+                        {sortBy === 'startTime' ? (
+                          sortDir === 'asc' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-indigo-600"><path fill="currentColor" d="M7 14l5-5 5 5H7z"/></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-indigo-600"><path fill="currentColor" d="M7 10l5 5 5-5H7z"/></svg>
+                          )
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-gray-400"><path fill="currentColor" d="M7 10h10v2H7zm0 4h10v2H7zM7 6h10v2H7z"/></svg>
+                        )}
+                      </button>
+                    </th>
+                    <th>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1"
+                        onClick={() => {
+                          const nextDir = sortBy === 'total' ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc'
+                          setSortBy('total')
+                          setSortDir(nextDir)
+                          updateQuery({ sortBy: 'total', sortDir: nextDir, page: 1 })
+                          setPage(1)
+                        }}
+                      >
+                        <span>Total Test</span>
+                        {sortBy === 'total' ? (
+                          sortDir === 'asc' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-indigo-600"><path fill="currentColor" d="M7 14l5-5 5 5H7z"/></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-indigo-600"><path fill="currentColor" d="M7 10l5 5 5-5H7z"/></svg>
+                          )
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-gray-400"><path fill="currentColor" d="M7 10h10v2H7zm0 4h10v2H7zM7 6h10v2H7z"/></svg>
+                        )}
+                      </button>
+                    </th>
+                    <th>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1"
+                        onClick={() => {
+                          const nextDir = sortBy === 'passed' ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc'
+                          setSortBy('passed')
+                          setSortDir(nextDir)
+                          updateQuery({ sortBy: 'passed', sortDir: nextDir, page: 1 })
+                          setPage(1)
+                        }}
+                      >
+                        <span>Passed</span>
+                        {sortBy === 'passed' ? (
+                          sortDir === 'asc' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-indigo-600"><path fill="currentColor" d="M7 14l5-5 5 5H7z"/></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-indigo-600"><path fill="currentColor" d="M7 10l5 5 5-5H7z"/></svg>
+                          )
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-gray-400"><path fill="currentColor" d="M7 10h10v2H7zm0 4h10v2H7zM7 6h10v2H7z"/></svg>
+                        )}
+                      </button>
+                    </th>
+                    <th>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1"
+                        onClick={() => {
+                          const nextDir = sortBy === 'failed' ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc'
+                          setSortBy('failed')
+                          setSortDir(nextDir)
+                          updateQuery({ sortBy: 'failed', sortDir: nextDir, page: 1 })
+                          setPage(1)
+                        }}
+                      >
+                        <span>Failed</span>
+                        {sortBy === 'failed' ? (
+                          sortDir === 'asc' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-indigo-600"><path fill="currentColor" d="M7 14l5-5 5 5H7z"/></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-indigo-600"><path fill="currentColor" d="M7 10l5 5 5-5H7z"/></svg>
+                          )
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-gray-400"><path fill="currentColor" d="M7 10h10v2H7zm0 4h10v2H7zM7 6h10v2H7z"/></svg>
+                        )}
+                      </button>
+                    </th>
+                    <th>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1"
+                        onClick={() => {
+                          const nextDir = sortBy === 'broken' ? (sortDir === 'asc' ? 'desc' : 'asc') : 'desc'
+                          setSortBy('broken')
+                          setSortDir(nextDir)
+                          updateQuery({ sortBy: 'broken', sortDir: nextDir, page: 1 })
+                          setPage(1)
+                        }}
+                      >
+                        <span>Broken/Error</span>
+                        {sortBy === 'broken' ? (
+                          sortDir === 'asc' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-indigo-600"><path fill="currentColor" d="M7 14l5-5 5 5H7z"/></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-indigo-600"><path fill="currentColor" d="M7 10l5 5 5-5H7z"/></svg>
+                          )
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4 text-gray-400"><path fill="currentColor" d="M7 10h10v2H7zm0 4h10v2H7zM7 6h10v2H7z"/></svg>
+                        )}
+                      </button>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {runsItems.map((it, idx) => {
-                    const fmt = (v: string | undefined) => {
-                      if (!v) return ''
-                      const d = new Date(v)
-                      if (Number.isNaN(d.getTime())) return v
-                      const pad = (x: number) => String(x).padStart(2, '0')
-                      return `${pad(d.getUTCDate())}-${pad(d.getUTCMonth() + 1)}-${d.getUTCFullYear()} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
-                    }
                     return (
                       <tr
                         key={idx}
@@ -743,7 +961,7 @@ export default function ReportGenerator() {
                       >
                         <td className="text-gray-500">{idx + 1}</td>
                         <td>{String(it.runId ?? '')}</td>
-                        <td>{fmt(it.startTime)}</td>
+                        <td>{String(it.startTime ?? '')}</td>
                         <td>{String(it.summary?.total ?? 0)}</td>
                         <td>{String(it.summary?.passed ?? 0)}</td>
                         <td>{String(it.summary?.failed ?? 0)}</td>
@@ -753,6 +971,61 @@ export default function ReportGenerator() {
                   })}
                 </tbody>
               </table>
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Rows per page</span>
+                  <select
+                    className="select px-2 py-1 text-sm"
+                    value={pageSize}
+                    onChange={(e) => {
+                      const val = Number(e.target.value) || 5
+                      setPageSize(val)
+                      setPage(1)
+                      updateQuery({ pageSize: val, page: 1 })
+                    }}
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={page <= 1}
+                    onClick={() => {
+                      const next = Math.max(1, page - 1)
+                      setPage(next)
+                      updateQuery({ page: next })
+                    }}
+                  >
+                    Prev
+                  </button>
+                  <div className="text-sm text-gray-600">
+                    Trang {page} / {Math.max(1, Math.ceil((runsTotal || 0) / Math.max(1, pageSize)))}
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={
+                      page >= Math.max(1, Math.ceil((runsTotal || 0) / Math.max(1, pageSize)))
+                    }
+                    onClick={() => {
+                      const totalPages = Math.max(
+                        1,
+                        Math.ceil((runsTotal || 0) / Math.max(1, pageSize))
+                      )
+                      const next = Math.min(totalPages, page + 1)
+                      setPage(next)
+                      updateQuery({ page: next })
+                    }}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

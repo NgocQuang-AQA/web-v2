@@ -56,24 +56,25 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
         message?: string
         notice?: { content?: string } | null
       }>(`/api/run?env=${item.env}`)
-      const msgOk =
-        (res?.notice?.content && String(res.notice.content).trim()) ||
-        (res?.status === 'ok' ? 'Successfully triggered test run.' : '')
-      const msgErr =
-        res?.message && String(res.message).trim()
-          ? String(res.message).trim()
-          : 'Failed to trigger test run.'
-      window.dispatchEvent(
-        new CustomEvent('global:alert', {
-          detail: { message: msgOk || msgErr },
-        })
-      )
+      if (res?.status !== 'ok') {
+        const msgErr =
+          res?.message && String(res.message).trim()
+            ? String(res.message).trim()
+            : 'Failed to trigger test run.'
+        window.dispatchEvent(
+          new CustomEvent('global:alert', {
+            detail: { message: msgErr },
+          })
+        )
+        setFlag(item.env, false)
+      }
     } catch {
       window.dispatchEvent(
         new CustomEvent('global:alert', { detail: { message: 'Error triggering run' } })
       )
-    } finally {
       setFlag(item.env, false)
+    } finally {
+      window.dispatchEvent(new CustomEvent('global:reload', { detail: { source: 'run', env: item.env } }))
       setRunning(false)
     }
   }
@@ -88,26 +89,27 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
       const res = await apiJson<{ status?: string; message?: string; notice?: { content?: string } | null }>(
         `/api/run?${qs.toString()}`
       )
-      const msgOk =
-        (res?.notice?.content && String(res.notice.content).trim()) ||
-        (res?.status === 'ok' ? 'Sync data successfully.' : '')
-      const msgErr =
-        res?.message && String(res.message).trim()
-          ? String(res.message).trim()
-          : 'Sync failed.'
-      window.dispatchEvent(
-        new CustomEvent('global:alert', {
-          detail: { message: msgOk || msgErr },
-        })
-      )
+      if (res?.status !== 'ok') {
+        const msgErr =
+          res?.message && String(res.message).trim()
+            ? String(res.message).trim()
+            : 'Sync failed.'
+        window.dispatchEvent(
+          new CustomEvent('global:alert', {
+            detail: { message: msgErr },
+          })
+        )
+        setFlag(envKey, false)
+      }
     } catch {
       window.dispatchEvent(
         new CustomEvent('global:alert', { detail: { message: 'Error syncing data' } })
       )
-    } finally {
       const envKey =
         item.env === 'cnlive' ? 'synccnlive' : item.env === 'live' ? 'synclive' : 'synclive'
       setFlag(envKey, false)
+    } finally {
+      window.dispatchEvent(new CustomEvent('global:reload', { detail: { source: 'sync', env: item.env } }))
       setSyncing(false)
     }
   }
@@ -311,34 +313,154 @@ function StatCard({
 function BarGroup({
   label,
   data,
+  type = 'bar',
+  tone = 'indigo',
 }: {
   label: string
   data: { day: number; week: number; month: number }
+  type?: 'bar' | 'line'
+  tone?: 'indigo' | 'rose' | 'emerald' | 'blue' | 'amber'
 }) {
-  const max = Math.max(data.day, data.week, data.month, 1)
-  const h = (v: number) => `${Math.max(5, (v / max) * 100)}%`
+  const items = [
+    { k: 'Day', v: data.day },
+    { k: 'Week', v: data.week },
+    { k: 'Month', v: data.month },
+  ]
+  const max = Math.max(...items.map((i) => i.v), 1)
+  const width = 480
+  const height = 200
+  const ml = 32
+  const mr = 24
+  const mt = 16
+  const mb = 36
+  const cw = width - ml - mr
+  const ch = height - mt - mb
+  const bw = Math.floor((cw / items.length) * 0.6)
+  const gap = Math.floor((cw - bw * items.length) / (items.length - 1 || 1))
+  const xPos = (i: number) => ml + i * (bw + gap)
+  const yScale = (v: number) => Math.max(2, Math.round((v / max) * ch))
+  const ticks = [0, 0.25, 0.5, 0.75, 1]
+  const palette: Record<string, { primary: string; light: string }> = {
+    indigo: { primary: '#6366f1', light: '#eef2ff' },
+    rose: { primary: '#f43f5e', light: '#ffe4e6' },
+    emerald: { primary: '#10b981', light: '#d1fae5' },
+    blue: { primary: '#3b82f6', light: '#dbeafe' },
+    amber: { primary: '#f59e0b', light: '#fef3c7' },
+  }
+  const color = palette[tone]
+  const chartType: 'bar' | 'line' = type
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
       <div className="font-semibold text-gray-800 mb-6">{label}</div>
-      <div className="flex items-end justify-around h-32 gap-4">
-        {['Day', 'Week', 'Month'].map((k) => {
-          const key = k.toLowerCase() as keyof typeof data
-          const val = data[key]
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-48">
+        <rect x={0} y={0} width={width} height={height} fill="transparent" />
+        {ticks.map((t, idx) => {
+          const y = mt + ch - Math.round(t * ch)
           return (
-            <div key={k} className="flex flex-col items-center gap-2 w-full">
-              <div className="text-xs font-bold text-gray-700">{val}</div>
-              <div className="w-full bg-gray-100 rounded-t-lg relative group h-full flex items-end">
-                <div
-                  style={{ height: h(val) }}
-                  className="w-full bg-indigo-500 rounded-t-lg transition-all duration-500"
-                ></div>
-              </div>
-              <div className="text-xs text-gray-400">{k}</div>
-            </div>
+            <g key={idx}>
+              <line
+                x1={ml}
+                y1={y}
+                x2={width - mr}
+                y2={y}
+                stroke={palette.indigo.light}
+                strokeWidth={1}
+              />
+              <text
+                x={ml - 6}
+                y={y + 3}
+                textAnchor="end"
+                fontSize="10"
+                fill="#9ca3af"
+              >
+                {Math.round(t * max)}
+              </text>
+            </g>
           )
         })}
-      </div>
+        <line
+          x1={ml}
+          y1={mt + ch}
+          x2={width - mr}
+          y2={mt + ch}
+          stroke="#e5e7eb"
+          strokeWidth={1.5}
+        />
+        {chartType === 'bar' ? (
+          items.map((it, i) => {
+            const h = yScale(it.v)
+            const x = xPos(i)
+            const y = mt + ch - h
+            return (
+              <g key={it.k}>
+                <rect x={x} y={y} width={bw} height={h} rx={8} fill={color.primary} />
+                <text
+                  x={x + bw / 2}
+                  y={y - 8}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="#374151"
+                  fontWeight="700"
+                >
+                  {it.v}
+                </text>
+                <text
+                  x={x + bw / 2}
+                  y={mt + ch + 20}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="#6b7280"
+                >
+                  {it.k}
+                </text>
+              </g>
+            )
+          })
+        ) : (
+          (() => {
+            const points = items.map((it, i) => {
+              const x = xPos(i) + bw / 2
+              const y = mt + ch - yScale(it.v)
+              return { x, y, v: it.v, k: it.k }
+            })
+            const d = points
+              .map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`))
+              .join(' ')
+            const area = `M ${points[0].x} ${mt + ch} L ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y} L ${points[2].x} ${points[2].y} L ${points[2].x} ${mt + ch} Z`
+            return (
+              <g>
+                <path d={area} fill={color.light} />
+                <path d={d} stroke={color.primary} strokeWidth={2.5} fill="none" />
+                {points.map((p) => (
+                  <g key={p.k}>
+                    <circle cx={p.x} cy={p.y} r={5} fill={color.primary} />
+                    <text
+                      x={p.x}
+                      y={p.y - 10}
+                      textAnchor="middle"
+                      fontSize="12"
+                      fill="#374151"
+                      fontWeight="700"
+                    >
+                      {p.v}
+                    </text>
+                    <text
+                      x={p.x}
+                      y={mt + ch + 20}
+                      textAnchor="middle"
+                      fontSize="12"
+                      fill="#6b7280"
+                    >
+                      {p.k}
+                    </text>
+                  </g>
+                ))}
+              </g>
+            )
+          })()
+        )}
+      </svg>
     </div>
   )
 }
@@ -346,8 +468,10 @@ function BarGroup({
 export default function DailyAssistant() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
+    if (initialized) return
     const username = getAuthUsername()
     sendLog({
       level: 'info',
@@ -367,6 +491,24 @@ export default function DailyAssistant() {
       }
     }
     load()
+    setInitialized(true)
+  }, [])
+  useEffect(() => {
+    const onReload = async () => {
+      setLoading(true)
+      try {
+        const data = await apiJson<DashboardStats>('/api/dashboard/stats')
+        if (data) setStats(data)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    window.addEventListener('global:reload', onReload as EventListener)
+    return () => {
+      window.removeEventListener('global:reload', onReload as EventListener)
+    }
   }, [])
 
   if (loading) {
@@ -433,8 +575,8 @@ export default function DailyAssistant() {
 
         {/* Analytics Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <BarGroup label="VOC Usage Analytics" data={stats.vocUsage} />
-          <BarGroup label="Test Runs Analytics" data={stats.testRuns} />
+          <BarGroup label="VOC Usage Analytics" data={stats.vocUsage} type="bar" tone="indigo" />
+          <BarGroup label="Test Runs Analytics" data={stats.testRuns} type="line" tone="rose" />
         </div>
 
         {/* Latest Test Run */}

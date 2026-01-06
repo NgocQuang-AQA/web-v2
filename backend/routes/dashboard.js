@@ -54,16 +54,36 @@ export function createDashboardRouter({ filesRepo, testRunsRepo }) {
       // Check if testRunsRepo has generic count or access to collection
       // If testRunsRepo is a wrapper, we might use filesRepo.col('test-runs') directly if consistent
       const testRunsCol = filesRepo.col('test-runs') // Assuming this is the collection name
+      async function countByStartTime(since) {
+        const agg = await testRunsCol
+          .aggregate([
+            {
+              $addFields: {
+                _stDate: {
+                  $ifNull: [
+                    {
+                      $dateFromString: {
+                        dateString: '$startTime',
+                        format: '%Y-%m-%d %H-%M',
+                        onError: null,
+                        onNull: null,
+                      },
+                    },
+                    { $toDate: '$startTime' },
+                  ],
+                },
+              },
+            },
+            { $match: { _stDate: { $ne: null, $gte: since } } },
+            { $count: 'count' },
+          ])
+          .toArray()
+        return agg[0]?.count || 0
+      }
       const testRuns = {
-        day: await testRunsCol.countDocuments({
-          createdAt: { $gte: startOfDay.toISOString() },
-        }),
-        week: await testRunsCol.countDocuments({
-          createdAt: { $gte: startOfWeek.toISOString() },
-        }),
-        month: await testRunsCol.countDocuments({
-          createdAt: { $gte: startOfMonth.toISOString() },
-        }),
+        day: await countByStartTime(startOfDay),
+        week: await countByStartTime(startOfWeek),
+        month: await countByStartTime(startOfMonth),
       }
 
       // 5. Latest Test Run - from test-runs, order by startTime desc
@@ -72,15 +92,21 @@ export function createDashboardRouter({ filesRepo, testRunsRepo }) {
           {
             $addFields: {
               _stDate: {
-                $convert: {
-                  input: '$startTime',
-                  to: 'date',
-                  onError: null,
-                  onNull: null,
-                },
+                $ifNull: [
+                  {
+                    $dateFromString: {
+                      dateString: '$startTime',
+                      format: '%Y-%m-%d %H-%M',
+                      onError: null,
+                      onNull: null,
+                    },
+                  },
+                  { $toDate: '$startTime' },
+                ],
               },
             },
           },
+          { $match: { _stDate: { $ne: null } } },
           { $sort: { _stDate: -1 } },
           { $limit: 1 },
         ])
@@ -105,15 +131,21 @@ export function createDashboardRouter({ filesRepo, testRunsRepo }) {
             {
               $addFields: {
                 _stDate: {
-                  $convert: {
-                    input: '$startTime',
-                    to: 'date',
-                    onError: null,
-                    onNull: null,
-                  },
+                  $ifNull: [
+                    {
+                      $dateFromString: {
+                        dateString: '$startTime',
+                        format: '%Y-%m-%d %H-%M',
+                        onError: null,
+                        onNull: null,
+                      },
+                    },
+                    { $toDate: '$startTime' },
+                  ],
                 },
               },
             },
+            { $match: { _stDate: { $ne: null } } },
             { $sort: { _stDate: -1 } },
             { $limit: 1 },
           ])

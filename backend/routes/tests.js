@@ -19,9 +19,10 @@ export function createTestsRouter({ filesRepo }) {
       project,
       env,
       runId,
+      name,
       from,
       to,
-      sortBy = 'createdAt',
+      sortBy = 'startTime',
       order = 'desc',
     } = req.query
     const dir = String(order).toLowerCase() === 'asc' ? 1 : -1
@@ -29,8 +30,8 @@ export function createTestsRouter({ filesRepo }) {
     if (project) match.project = String(project)
     if (env) match.env = String(env)
     if (runId) match.runId = String(runId)
-    const sort =
-      String(sortBy) === 'startTime' ? { _stDate: dir } : { _tiDate: dir }
+    if (name) match.runId = { $regex: String(name), $options: 'i' }
+    const sort = { startTime: -1, _id: 1 }
     const pipelineBase = [
       {
         $addFields: {
@@ -43,13 +44,70 @@ export function createTestsRouter({ filesRepo }) {
             },
           },
           _stDate: {
-            $convert: {
-              input: '$startTime',
-              to: 'date',
-              onError: null,
-              onNull: null,
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $regexMatch: {
+                      input: '$startTime',
+                      regex:
+                        '^[0-9]{4}-[0-9]{2}-[0-9]{2}\\s+[0-9]{2}-[0-9]{2}$',
+                    },
+                  },
+                  then: {
+                    $dateFromString: {
+                      dateString: '$startTime',
+                      format: '%Y-%m-%d %H-%M',
+                      onError: null,
+                      onNull: null,
+                    },
+                  },
+                },
+                {
+                  case: {
+                    $regexMatch: {
+                      input: '$startTime',
+                      regex:
+                        '^[0-9]{2}-[0-9]{2}-[0-9]{4}\\s+[0-9]{2}:[0-9]{2}:[0-9]{2}$',
+                    },
+                  },
+                  then: {
+                    $dateFromString: {
+                      dateString: '$startTime',
+                      format: '%d-%m-%Y %H:%M:%S',
+                      onError: null,
+                      onNull: null,
+                    },
+                  },
+                },
+                {
+                  case: {
+                    $regexMatch: {
+                      input: '$startTime',
+                      regex:
+                        '^[0-9]{2}-[0-9]{2}-[0-9]{4}\\s+[0-9]{2}:[0-9]{2}$',
+                    },
+                  },
+                  then: {
+                    $dateFromString: {
+                      dateString: '$startTime',
+                      format: '%d-%m-%Y %H:%M',
+                      onError: null,
+                      onNull: null,
+                    },
+                  },
+                },
+              ],
+              default: {
+                $dateFromString: {
+                  dateString: '$startTime',
+                  onError: null,
+                  onNull: null,
+                },
+              },
             },
           },
+          _sortDate: { $ifNull: ['$_stDate', '$_tiDate'] },
         },
       },
       { $match: match },
