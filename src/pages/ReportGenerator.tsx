@@ -376,7 +376,10 @@ export default function ReportGenerator() {
         sortBy,
         sortDir,
       })
-      if (lastRunsKey === reqKey) return
+      if (lastRunsKey === reqKey) {
+        setRunsLoading(false)
+        return
+      }
       setLastRunsKey(reqKey)
       setRunsLoading(true)
       setRunsError(null)
@@ -421,7 +424,7 @@ export default function ReportGenerator() {
     return () => {
       canceled = true
     }
-  }, [projectParam, reloadEpoch, page, pageSize, name, sortBy, sortDir, lastRunsKey])
+  }, [projectParam, reloadEpoch, page, pageSize, name, sortBy, sortDir])
   useEffect(() => {
     if (!initRunId) return
     let canceled = false
