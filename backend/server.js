@@ -16,6 +16,7 @@ import { createNoticesRouter } from './routes/notices.js'
 import { createTestsRouter } from './routes/tests.js'
 import { createLogsRouter } from './routes/logs.js'
 import { createDashboardRouter } from './routes/dashboard.js'
+import performanceRouter from './routes/performance.js'
 
 const envCandidates = [
   path.resolve(process.cwd(), '.env'),
