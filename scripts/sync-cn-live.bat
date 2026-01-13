@@ -20,6 +20,7 @@ if not exist ".venv" (
   py -m venv .venv
 )
 
+set PYTHONIOENCODING=utf-8
 .venv\Scripts\python -m pip install -r requirements.txt
 .venv\Scripts\python update_test_data.py
 
