@@ -149,13 +149,19 @@ export function createRunRouter() {
           .json({ message: 'script_not_found', candidates, env })
 
       const { code, logs } = await runScript(scriptPath)
+      const sum = parseSyncSummaryFromLogs(logs)
       const namepath = parseNamepathFromLogs(logs)
       const time = new Date()
       const content = composeNoticeContent(env, namepath, logs, key)
       const doc = new Notice({ content, time, namepath })
       await doc.save()
       res.json({
-        status: code === 0 ? 'ok' : 'error',
+        status:
+          String(env).toLowerCase().startsWith('sync') && sum
+            ? 'ok'
+            : code === 0
+              ? 'ok'
+              : 'error',
         exitCode: code,
         notice: doc,
       })

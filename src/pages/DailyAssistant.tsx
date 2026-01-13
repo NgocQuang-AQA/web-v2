@@ -248,7 +248,7 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
                 >
                   <path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5 0 .34-.03.67-.1.99l1.53 1.53C18.81 14.79 19 13.92 19 13c0-3.87-3.13-7-7-7zm-7.41.41L3.17 7.83C2.39 9.07 2 10.49 2 12c0 3.87 3.13 7 7 7v3l4-4-4-4v3c-2.76 0-5-2.24-5-5 0-1.1.3-2.13.82-3.02L4.59 6.41z" />
                 </svg>
-                <span className="font-medium">Sync Data</span>
+                <span className="font-medium">Sync</span>
               </>
             )}
           </button>
