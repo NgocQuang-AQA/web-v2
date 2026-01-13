@@ -9,6 +9,7 @@ import {
   flagByCode,
   tabsPreview,
   tabsReport,
+  tabsTournaments,
   flagEtcSrc,
 } from '../data/helperVoc'
 import SearchForm from '../features/helpervoc/SearchForm'
@@ -30,8 +31,12 @@ export default function HelperVoc() {
   const initPage = Number(initParams.get('page')) || 1
   const initSize = Number(initParams.get('size')) || 10
   const initViewParam = initParams.get('view') || 'preview'
-  const [view, setView] = useState<'preview' | 'report'>(
-    initViewParam === 'report' ? 'report' : 'preview'
+  const [view, setView] = useState<'preview' | 'report' | 'tournaments'>(
+    initViewParam === 'report'
+      ? 'report'
+      : initViewParam === 'tournaments'
+        ? 'tournaments'
+        : 'preview'
   )
   const [env, setEnv] = useState<Env>(initEnv)
   const [vocId, setVocId] = useState(initVocId)
@@ -59,7 +64,12 @@ export default function HelperVoc() {
 
   const base = envBase[env]
 
-  const tabsList = view === 'report' ? tabsReport : tabsPreview
+  const tabsList =
+    view === 'report'
+      ? tabsReport
+      : view === 'tournaments'
+        ? tabsTournaments
+        : tabsPreview
   const currentPath = useMemo(
     () => tabsList.find((t) => t.key === active)?.path || tabsList[0].path,
     [active, tabsList]
@@ -216,7 +226,7 @@ export default function HelperVoc() {
   useEffect(() => {
     let canceled = false
     async function loadPreview() {
-      if (view !== 'preview') return
+      if (view !== 'preview' && view !== 'tournaments') return
       const userNo =
         searchBy === 'userNo' ? vocId.trim() : String(user?.userNo || '')
       if (!userNo) return
@@ -386,7 +396,18 @@ export default function HelperVoc() {
     }
   }, [rows, active, view])
 
-  const filteredRows = useMemo(() => rows, [rows])
+  const filteredRows = useMemo(() => {
+    if (view === 'tournaments' && active === 'gs') {
+      return rows.filter((r) => {
+        const v = (r as Record<string, unknown>)['pr_istournament']
+        if (v == null) return false
+        if (typeof v === 'number') return v === 1
+        if (typeof v === 'string') return v.trim() === '1'
+        return false
+      })
+    }
+    return rows
+  }, [rows, view, active])
 
   const effectiveRows =
     view === 'report'
@@ -475,8 +496,40 @@ export default function HelperVoc() {
             >
               Report
             </button>
+            <button
+              className={`px-3 py-2 text-sm ${view === 'tournaments' ? 'text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600'}`}
+              onClick={() => {
+                setView('tournaments')
+                setSubmittedFrom(from)
+                setActive('gs')
+                updateQuery({ view: 'tournaments', tab: 'gs' })
+              }}
+            >
+              Tournaments
+            </button>
           </div>
-          {view === 'preview' ? (
+          {view === 'report' ? (
+            <>
+              <ReportSearchForm
+                env={env}
+                from={from}
+                onChangeEnv={(v: Env) => {
+                  setEnv(v)
+                  updateQuery({ env: v })
+                }}
+                onChangeFrom={(v: string) => {
+                  setFrom(v)
+                  updateQuery({ from: v })
+                }}
+                onSearch={() => {
+                  setSubmittedFrom(from)
+                  setPage(1)
+                  setSearchEpoch((x) => x + 1)
+                  updateQuery({ env, from, page: 1, tab: active, size })
+                }}
+              />
+            </>
+          ) : (
             <>
               <SearchForm
                 env={env}
@@ -503,27 +556,6 @@ export default function HelperVoc() {
                   onCopy={copySession}
                 />
               )}
-            </>
-          ) : (
-            <>
-              <ReportSearchForm
-                env={env}
-                from={from}
-                onChangeEnv={(v: Env) => {
-                  setEnv(v)
-                  updateQuery({ env: v })
-                }}
-                onChangeFrom={(v: string) => {
-                  setFrom(v)
-                  updateQuery({ from: v })
-                }}
-                onSearch={() => {
-                  setSubmittedFrom(from)
-                  setPage(1)
-                  setSearchEpoch((x) => x + 1)
-                  updateQuery({ env, from, page: 1, tab: active, size })
-                }}
-              />
             </>
           )}
           <div className="flex items-center gap-4 border-b border-gray-100">

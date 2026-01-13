@@ -167,4 +167,7 @@ export const tabsReport: { key: TabKey; label: string; path: string }[] = [
   },
 ]
 
+export const tabsTournaments: { key: TabKey; label: string; path: string }[] =
+  [{ key: 'gs', label: 'GS', path: '/v1/helper/gs' }]
+
 export const flagEtcSrc = flagEtc
