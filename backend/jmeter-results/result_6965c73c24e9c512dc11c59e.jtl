@@ -1,0 +1,101 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1768277823361,248,HTTP Request,200,OK,Thread-0,text,true,,100,50,1,1,http://globalapi.spazon.com,238,0,5
+1768277823461,359,HTTP Request,200,OK,Thread-1,text,true,,100,50,1,1,http://globalapi.spazon.com,349,0,5
+1768277823561,137,HTTP Request,200,OK,Thread-2,text,true,,100,50,1,1,http://globalapi.spazon.com,127,0,5
+1768277823661,258,HTTP Request,200,OK,Thread-3,text,true,,100,50,1,1,http://globalapi.spazon.com,248,0,5
+1768277823761,298,HTTP Request,500,Internal Error,Thread-4,text,false,Err,100,50,1,1,http://globalapi.spazon.com,288,0,5
+1768277823861,359,HTTP Request,200,OK,Thread-5,text,true,,100,50,1,1,http://globalapi.spazon.com,349,0,5
+1768277823961,207,HTTP Request,200,OK,Thread-6,text,true,,100,50,1,1,http://globalapi.spazon.com,197,0,5
+1768277824061,541,HTTP Request,200,OK,Thread-7,text,true,,100,50,1,1,http://globalapi.spazon.com,531,0,5
+1768277824161,152,HTTP Request,200,OK,Thread-8,text,true,,100,50,1,1,http://globalapi.spazon.com,142,0,5
+1768277824261,413,HTTP Request,200,OK,Thread-9,text,true,,100,50,1,1,http://globalapi.spazon.com,403,0,5
+1768277824361,59,HTTP Request,200,OK,Thread-10,text,true,,100,50,1,1,http://globalapi.spazon.com,49,0,5
+1768277824461,287,HTTP Request,200,OK,Thread-11,text,true,,100,50,1,1,http://globalapi.spazon.com,277,0,5
+1768277824561,396,HTTP Request,200,OK,Thread-12,text,true,,100,50,1,1,http://globalapi.spazon.com,386,0,5
+1768277824661,263,HTTP Request,200,OK,Thread-13,text,true,,100,50,1,1,http://globalapi.spazon.com,253,0,5
+1768277824761,259,HTTP Request,200,OK,Thread-14,text,true,,100,50,1,1,http://globalapi.spazon.com,249,0,5
+1768277824861,227,HTTP Request,200,OK,Thread-15,text,true,,100,50,1,1,http://globalapi.spazon.com,217,0,5
+1768277824961,149,HTTP Request,200,OK,Thread-16,text,true,,100,50,1,1,http://globalapi.spazon.com,139,0,5
+1768277825061,65,HTTP Request,500,Internal Error,Thread-17,text,false,Err,100,50,1,1,http://globalapi.spazon.com,55,0,5
+1768277825161,166,HTTP Request,500,Internal Error,Thread-18,text,false,Err,100,50,1,1,http://globalapi.spazon.com,156,0,5
+1768277825261,224,HTTP Request,500,Internal Error,Thread-19,text,false,Err,100,50,1,1,http://globalapi.spazon.com,214,0,5
+1768277825361,149,HTTP Request,200,OK,Thread-20,text,true,,100,50,1,1,http://globalapi.spazon.com,139,0,5
+1768277825461,258,HTTP Request,200,OK,Thread-21,text,true,,100,50,1,1,http://globalapi.spazon.com,248,0,5
+1768277825561,196,HTTP Request,200,OK,Thread-22,text,true,,100,50,1,1,http://globalapi.spazon.com,186,0,5
+1768277825661,380,HTTP Request,500,Internal Error,Thread-23,text,false,Err,100,50,1,1,http://globalapi.spazon.com,370,0,5
+1768277825761,106,HTTP Request,200,OK,Thread-24,text,true,,100,50,1,1,http://globalapi.spazon.com,96,0,5
+1768277825861,352,HTTP Request,500,Internal Error,Thread-25,text,false,Err,100,50,1,1,http://globalapi.spazon.com,342,0,5
+1768277825961,143,HTTP Request,200,OK,Thread-26,text,true,,100,50,1,1,http://globalapi.spazon.com,133,0,5
+1768277826061,541,HTTP Request,500,Internal Error,Thread-27,text,false,Err,100,50,1,1,http://globalapi.spazon.com,531,0,5
+1768277826161,397,HTTP Request,200,OK,Thread-28,text,true,,100,50,1,1,http://globalapi.spazon.com,387,0,5
+1768277826261,169,HTTP Request,200,OK,Thread-29,text,true,,100,50,1,1,http://globalapi.spazon.com,159,0,5
+1768277826361,397,HTTP Request,200,OK,Thread-30,text,true,,100,50,1,1,http://globalapi.spazon.com,387,0,5
+1768277826461,277,HTTP Request,500,Internal Error,Thread-31,text,false,Err,100,50,1,1,http://globalapi.spazon.com,267,0,5
+1768277826561,97,HTTP Request,200,OK,Thread-32,text,true,,100,50,1,1,http://globalapi.spazon.com,87,0,5
+1768277826661,205,HTTP Request,200,OK,Thread-33,text,true,,100,50,1,1,http://globalapi.spazon.com,195,0,5
+1768277826761,316,HTTP Request,200,OK,Thread-34,text,true,,100,50,1,1,http://globalapi.spazon.com,306,0,5
+1768277826861,476,HTTP Request,200,OK,Thread-35,text,true,,100,50,1,1,http://globalapi.spazon.com,466,0,5
+1768277826961,360,HTTP Request,200,OK,Thread-36,text,true,,100,50,1,1,http://globalapi.spazon.com,350,0,5
+1768277827061,422,HTTP Request,200,OK,Thread-37,text,true,,100,50,1,1,http://globalapi.spazon.com,412,0,5
+1768277827161,248,HTTP Request,200,OK,Thread-38,text,true,,100,50,1,1,http://globalapi.spazon.com,238,0,5
+1768277827261,456,HTTP Request,200,OK,Thread-39,text,true,,100,50,1,1,http://globalapi.spazon.com,446,0,5
+1768277827361,99,HTTP Request,200,OK,Thread-40,text,true,,100,50,1,1,http://globalapi.spazon.com,89,0,5
+1768277827461,384,HTTP Request,200,OK,Thread-41,text,true,,100,50,1,1,http://globalapi.spazon.com,374,0,5
+1768277827561,315,HTTP Request,200,OK,Thread-42,text,true,,100,50,1,1,http://globalapi.spazon.com,305,0,5
+1768277827661,397,HTTP Request,200,OK,Thread-43,text,true,,100,50,1,1,http://globalapi.spazon.com,387,0,5
+1768277827761,375,HTTP Request,200,OK,Thread-44,text,true,,100,50,1,1,http://globalapi.spazon.com,365,0,5
+1768277827861,409,HTTP Request,500,Internal Error,Thread-45,text,false,Err,100,50,1,1,http://globalapi.spazon.com,399,0,5
+1768277827961,319,HTTP Request,500,Internal Error,Thread-46,text,false,Err,100,50,1,1,http://globalapi.spazon.com,309,0,5
+1768277828061,391,HTTP Request,200,OK,Thread-47,text,true,,100,50,1,1,http://globalapi.spazon.com,381,0,5
+1768277828161,249,HTTP Request,200,OK,Thread-48,text,true,,100,50,1,1,http://globalapi.spazon.com,239,0,5
+1768277828261,495,HTTP Request,200,OK,Thread-49,text,true,,100,50,1,1,http://globalapi.spazon.com,485,0,5
+1768277828361,326,HTTP Request,200,OK,Thread-50,text,true,,100,50,1,1,http://globalapi.spazon.com,316,0,5
+1768277828461,294,HTTP Request,200,OK,Thread-51,text,true,,100,50,1,1,http://globalapi.spazon.com,284,0,5
+1768277828561,508,HTTP Request,200,OK,Thread-52,text,true,,100,50,1,1,http://globalapi.spazon.com,498,0,5
+1768277828661,266,HTTP Request,200,OK,Thread-53,text,true,,100,50,1,1,http://globalapi.spazon.com,256,0,5
+1768277828761,411,HTTP Request,200,OK,Thread-54,text,true,,100,50,1,1,http://globalapi.spazon.com,401,0,5
+1768277828861,434,HTTP Request,200,OK,Thread-55,text,true,,100,50,1,1,http://globalapi.spazon.com,424,0,5
+1768277828961,160,HTTP Request,200,OK,Thread-56,text,true,,100,50,1,1,http://globalapi.spazon.com,150,0,5
+1768277829061,193,HTTP Request,200,OK,Thread-57,text,true,,100,50,1,1,http://globalapi.spazon.com,183,0,5
+1768277829161,106,HTTP Request,500,Internal Error,Thread-58,text,false,Err,100,50,1,1,http://globalapi.spazon.com,96,0,5
+1768277829261,352,HTTP Request,200,OK,Thread-59,text,true,,100,50,1,1,http://globalapi.spazon.com,342,0,5
+1768277829361,451,HTTP Request,200,OK,Thread-60,text,true,,100,50,1,1,http://globalapi.spazon.com,441,0,5
+1768277829461,63,HTTP Request,200,OK,Thread-61,text,true,,100,50,1,1,http://globalapi.spazon.com,53,0,5
+1768277829561,138,HTTP Request,200,OK,Thread-62,text,true,,100,50,1,1,http://globalapi.spazon.com,128,0,5
+1768277829661,252,HTTP Request,200,OK,Thread-63,text,true,,100,50,1,1,http://globalapi.spazon.com,242,0,5
+1768277829761,215,HTTP Request,200,OK,Thread-64,text,true,,100,50,1,1,http://globalapi.spazon.com,205,0,5
+1768277829861,128,HTTP Request,200,OK,Thread-65,text,true,,100,50,1,1,http://globalapi.spazon.com,118,0,5
+1768277829961,195,HTTP Request,200,OK,Thread-66,text,true,,100,50,1,1,http://globalapi.spazon.com,185,0,5
+1768277830061,480,HTTP Request,200,OK,Thread-67,text,true,,100,50,1,1,http://globalapi.spazon.com,470,0,5
+1768277830161,404,HTTP Request,200,OK,Thread-68,text,true,,100,50,1,1,http://globalapi.spazon.com,394,0,5
+1768277830261,126,HTTP Request,500,Internal Error,Thread-69,text,false,Err,100,50,1,1,http://globalapi.spazon.com,116,0,5
+1768277830361,220,HTTP Request,200,OK,Thread-70,text,true,,100,50,1,1,http://globalapi.spazon.com,210,0,5
+1768277830461,479,HTTP Request,200,OK,Thread-71,text,true,,100,50,1,1,http://globalapi.spazon.com,469,0,5
+1768277830561,520,HTTP Request,200,OK,Thread-72,text,true,,100,50,1,1,http://globalapi.spazon.com,510,0,5
+1768277830661,538,HTTP Request,200,OK,Thread-73,text,true,,100,50,1,1,http://globalapi.spazon.com,528,0,5
+1768277830761,232,HTTP Request,200,OK,Thread-74,text,true,,100,50,1,1,http://globalapi.spazon.com,222,0,5
+1768277830861,447,HTTP Request,200,OK,Thread-75,text,true,,100,50,1,1,http://globalapi.spazon.com,437,0,5
+1768277830961,525,HTTP Request,200,OK,Thread-76,text,true,,100,50,1,1,http://globalapi.spazon.com,515,0,5
+1768277831061,218,HTTP Request,200,OK,Thread-77,text,true,,100,50,1,1,http://globalapi.spazon.com,208,0,5
+1768277831161,214,HTTP Request,200,OK,Thread-78,text,true,,100,50,1,1,http://globalapi.spazon.com,204,0,5
+1768277831261,397,HTTP Request,200,OK,Thread-79,text,true,,100,50,1,1,http://globalapi.spazon.com,387,0,5
+1768277831361,206,HTTP Request,200,OK,Thread-80,text,true,,100,50,1,1,http://globalapi.spazon.com,196,0,5
+1768277831461,108,HTTP Request,200,OK,Thread-81,text,true,,100,50,1,1,http://globalapi.spazon.com,98,0,5
+1768277831561,287,HTTP Request,200,OK,Thread-82,text,true,,100,50,1,1,http://globalapi.spazon.com,277,0,5
+1768277831661,55,HTTP Request,200,OK,Thread-83,text,true,,100,50,1,1,http://globalapi.spazon.com,45,0,5
+1768277831761,109,HTTP Request,200,OK,Thread-84,text,true,,100,50,1,1,http://globalapi.spazon.com,99,0,5
+1768277831861,239,HTTP Request,200,OK,Thread-85,text,true,,100,50,1,1,http://globalapi.spazon.com,229,0,5
+1768277831961,135,HTTP Request,500,Internal Error,Thread-86,text,false,Err,100,50,1,1,http://globalapi.spazon.com,125,0,5
+1768277832061,267,HTTP Request,200,OK,Thread-87,text,true,,100,50,1,1,http://globalapi.spazon.com,257,0,5
+1768277832161,198,HTTP Request,200,OK,Thread-88,text,true,,100,50,1,1,http://globalapi.spazon.com,188,0,5
+1768277832261,482,HTTP Request,200,OK,Thread-89,text,true,,100,50,1,1,http://globalapi.spazon.com,472,0,5
+1768277832361,210,HTTP Request,200,OK,Thread-90,text,true,,100,50,1,1,http://globalapi.spazon.com,200,0,5
+1768277832461,494,HTTP Request,500,Internal Error,Thread-91,text,false,Err,100,50,1,1,http://globalapi.spazon.com,484,0,5
+1768277832561,379,HTTP Request,200,OK,Thread-92,text,true,,100,50,1,1,http://globalapi.spazon.com,369,0,5
+1768277832661,301,HTTP Request,200,OK,Thread-93,text,true,,100,50,1,1,http://globalapi.spazon.com,291,0,5
+1768277832761,437,HTTP Request,200,OK,Thread-94,text,true,,100,50,1,1,http://globalapi.spazon.com,427,0,5
+1768277832861,503,HTTP Request,200,OK,Thread-95,text,true,,100,50,1,1,http://globalapi.spazon.com,493,0,5
+1768277832961,165,HTTP Request,200,OK,Thread-96,text,true,,100,50,1,1,http://globalapi.spazon.com,155,0,5
+1768277833061,494,HTTP Request,200,OK,Thread-97,text,true,,100,50,1,1,http://globalapi.spazon.com,484,0,5
+1768277833161,393,HTTP Request,200,OK,Thread-98,text,true,,100,50,1,1,http://globalapi.spazon.com,383,0,5
+1768277833261,241,HTTP Request,200,OK,Thread-99,text,true,,100,50,1,1,http://globalapi.spazon.com,231,0,5

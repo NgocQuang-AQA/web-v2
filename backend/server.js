@@ -93,6 +93,8 @@ app.use(
   createDashboardRouter({ filesRepo, testRunsRepo })
 )
 
+app.use('/api/performance', performanceRouter)
+
 const port = process.env.PORT || 4000
 const isDev = String(process.env.NODE_ENV || '').toLowerCase() !== 'production'
 
