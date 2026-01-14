@@ -492,7 +492,7 @@ export default function DailyAssistant() {
     }
     load()
     setInitialized(true)
-  }, [])
+  }, [initialized])
   useEffect(() => {
     const onReload = async () => {
       setLoading(true)

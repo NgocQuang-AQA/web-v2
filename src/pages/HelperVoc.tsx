@@ -13,6 +13,7 @@ import {
   flagEtcSrc,
 } from '../data/helperVoc'
 import SearchForm from '../features/helpervoc/SearchForm'
+import TournamentSearchForm from '../features/helpervoc/TournamentSearchForm'
 import ReportSearchForm from '../features/helpervoc/ReportSearchForm'
 import UserSummary from '../features/helpervoc/UserSummary'
 import RecordsTable from '../features/helpervoc/RecordsTable'
@@ -526,6 +527,27 @@ export default function HelperVoc() {
                   setPage(1)
                   setSearchEpoch((x) => x + 1)
                   updateQuery({ env, from, page: 1, tab: active, size })
+                }}
+              />
+            </>
+          ) : view === 'tournaments' ? (
+            <>
+              <TournamentSearchForm
+                env={env}
+                value={vocId}
+                onChangeEnv={(v: Env) => {
+                  setEnv(v)
+                  updateQuery({ env: v })
+                }}
+                onChangeValue={(v: string) => {
+                  setVocId(v)
+                }}
+                onSearch={() => {
+                  // For tournaments, treat vocId as tournament no -> set as userNo (searchBy='userNo')
+                  // but we must hide searchBy dropdown.
+                  // We'll just trigger search(), but ensure searchBy is 'userNo' effectively.
+                  setSearchBy('userNo')
+                  search()
                 }}
               />
             </>

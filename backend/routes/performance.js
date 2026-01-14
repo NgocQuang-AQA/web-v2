@@ -90,14 +90,15 @@ const parseJTL = (filePath) => {
 // Run a new test
 router.post('/run', async (req, res) => {
   try {
-    const { apiName, method, headers, body, token, jmeterConfig } = req.body;
+    const { apiName, method, headers, body, token, requestConfig, jmeterConfig } = req.body;
+    const reqCfg = requestConfig || { headers, body, token };
 
     // 1. Create DB Record
     const testRecord = new PerformanceTest({
         apiName,
         method,
         targetUrl: `${jmeterConfig.protocol}://${jmeterConfig.host}:${jmeterConfig.port}${jmeterConfig.path}`,
-        requestConfig: { headers, body, token },
+        requestConfig: reqCfg,
         jmeterConfig
     });
     await testRecord.save();
@@ -121,8 +122,9 @@ router.post('/run', async (req, res) => {
 
             // Build Headers XML
             let headersXml = '';
-            if (headers) {
-                for (const [key, value] of Object.entries(headers)) {
+            const hdrs = reqCfg?.headers || {};
+            if (hdrs) {
+                for (const [key, value] of Object.entries(hdrs)) {
                     headersXml += `
                     <elementProp name="" elementType="Header">
                       <stringProp name="Header.name">${key}</stringProp>
@@ -130,17 +132,29 @@ router.post('/run', async (req, res) => {
                     </elementProp>`;
                 }
             }
-            if (token) {
+            const tokenVal = reqCfg?.token || token;
+            if (tokenVal) {
                  headersXml += `
                     <elementProp name="" elementType="Header">
                       <stringProp name="Header.name">Authorization</stringProp>
-                      <stringProp name="Header.value">${token}</stringProp>
+                      <stringProp name="Header.value">${tokenVal}</stringProp>
                     </elementProp>`;
             }
 
             // Build Body
             // Escape JSON for XML inclusion
-            const bodyStr = body ? JSON.stringify(body).replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
+            const bodyPayload = reqCfg?.body ?? body;
+            const bodyStr = bodyPayload
+              ? JSON.stringify(bodyPayload)
+                  .replace(/"/g, '&quot;')
+                  .replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;')
+              : '';
+
+            const safePath = (jmeterConfig.path || '')
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;');
 
             // Replace Placeholders
             templateContent = templateContent
@@ -150,7 +164,7 @@ router.post('/run', async (req, res) => {
                 .replace(/__PROTOCOL__/g, jmeterConfig.protocol || 'https')
                 .replace(/__HOST__/g, jmeterConfig.host)
                 .replace(/__PORT__/g, jmeterConfig.port || 443)
-                .replace(/__PATH__/g, jmeterConfig.path)
+                .replace(/__PATH__/g, safePath)
                 .replace(/__METHOD__/g, method)
                 .replace(/__HEADERS_XML__/g, headersXml)
                 .replace(/__BODY__/g, bodyStr);
@@ -181,29 +195,10 @@ router.post('/run', async (req, res) => {
                     // fs.unlinkSync(runJmxPath);
                 });
             } else {
-                // MOCK EXECUTION MODE (For environment without JMeter)
-                console.warn(`[WARN] JMeter not found. Simulating test execution for ID: ${testRecord._id}`);
-                
-                setTimeout(async () => {
-                    // Generate Mock JTL Data
-                    const now = Date.now();
-                    let csvContent = `timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect\n`;
-                    
-                    const samples = jmeterConfig.threads * jmeterConfig.loop;
-                    for(let i=0; i<samples; i++) {
-                         const isSuccess = Math.random() > 0.1; // 90% success
-                         const elapsed = Math.floor(Math.random() * 500) + 50; // 50-550ms
-                         csvContent += `${now + (i*100)},${elapsed},HTTP Request,${isSuccess?200:500},${isSuccess?'OK':'Internal Error'},Thread-${i%jmeterConfig.threads},text,${isSuccess},${isSuccess?'':'Err'},100,50,1,1,http://${jmeterConfig.host},${elapsed-10},0,5\n`;
-                    }
-
-                    fs.writeFileSync(resultJtlPath, csvContent);
-                    
-                    testRecord.status = 'COMPLETED';
-                    testRecord.resultFilePath = resultJtlPath;
-                    testRecord.summary = parseJTL(resultJtlPath);
-                    await testRecord.save();
-                    console.log(`[INFO] Mock test ${testRecord._id} finished.`);
-                }, 3000); // Simulate 3s run
+                console.error(`[ERROR] JMeter not found. Performance test ${testRecord._id} cannot be executed without JMeter.`);
+                testRecord.status = 'FAILED';
+                testRecord.errorMessage = 'JMeter is not installed or not available in PATH';
+                await testRecord.save();
             }
 
         } catch (innerError) {
@@ -231,11 +226,18 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// List all tests
+// List tests with pagination
 router.get('/', async (req, res) => {
     try {
-        const tests = await PerformanceTest.find().sort({createdAt: -1}).limit(50);
-        res.json(tests);
+        const { page = 1, pageSize = 20 } = req.query;
+        const p = Math.max(1, Number(page) || 1);
+        const s = Math.max(1, Math.min(100, Number(pageSize) || 20));
+        const total = await PerformanceTest.countDocuments();
+        const items = await PerformanceTest.find()
+            .sort({ createdAt: -1 })
+            .skip((p - 1) * s)
+            .limit(s);
+        res.json({ total, items });
     } catch (e) {
         res.status(500).json({error: e.message});
     }

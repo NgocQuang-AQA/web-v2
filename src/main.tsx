@@ -12,6 +12,7 @@ import HelperVoc from './pages/HelperVoc.tsx'
 import Login from './pages/Login.tsx'
 import NotFound from './pages/NotFound.tsx'
 import AccountManagement from './pages/admin/AccountManagement.tsx'
+import PerformanceTest from './pages/PerformanceTest/index.tsx'
 import Protected from './app/Protected'
 import { installWebLogger } from './lib/logger'
 
@@ -55,6 +56,14 @@ const router = createBrowserRouter([
     element: (
       <Protected>
         <ReportGenerator />
+      </Protected>
+    ),
+  },
+  {
+    path: '/agents/performance',
+    element: (
+      <Protected>
+        <PerformanceTest />
       </Protected>
     ),
   },

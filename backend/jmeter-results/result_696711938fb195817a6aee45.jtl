@@ -1,0 +1,11 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1768362389646,1340,HTTP Request,200,200,Thread Group 1-4,text,true,,5297,424,10,10,https://globalapi.spazon.com/site/getFeedList?page=1&rows=5,1337,0,687
+1768362389743,1456,HTTP Request,200,200,Thread Group 1-5,text,true,,5297,424,9,9,https://globalapi.spazon.com/site/getFeedList?page=1&rows=5,1455,0,685
+1768362389446,2078,HTTP Request,200,200,Thread Group 1-2,text,true,,5297,424,8,8,https://globalapi.spazon.com/site/getFeedList?page=1&rows=5,1855,0,895
+1768362390044,1506,HTTP Request,200,200,Thread Group 1-8,text,true,,5297,424,7,7,https://globalapi.spazon.com/site/getFeedList?page=1&rows=5,1506,0,682
+1768362390144,1463,HTTP Request,200,200,Thread Group 1-9,text,true,,5297,424,6,6,https://globalapi.spazon.com/site/getFeedList?page=1&rows=5,1463,0,665
+1768362389391,2216,HTTP Request,200,200,Thread Group 1-1,text,true,,5297,424,6,6,https://globalapi.spazon.com/site/getFeedList?page=1&rows=5,2216,0,955
+1768362389544,2093,HTTP Request,200,200,Thread Group 1-3,text,true,,5297,424,4,4,https://globalapi.spazon.com/site/getFeedList?page=1&rows=5,2093,0,797
+1768362389845,1992,HTTP Request,200,200,Thread Group 1-6,text,true,,5297,424,3,3,https://globalapi.spazon.com/site/getFeedList?page=1&rows=5,1992,0,667
+1768362389945,1953,HTTP Request,200,200,Thread Group 1-7,text,true,,5297,424,2,2,https://globalapi.spazon.com/site/getFeedList?page=1&rows=5,1953,0,666
+1768362390244,1773,HTTP Request,200,200,Thread Group 1-10,text,true,,5297,424,1,1,https://globalapi.spazon.com/site/getFeedList?page=1&rows=5,1773,0,676

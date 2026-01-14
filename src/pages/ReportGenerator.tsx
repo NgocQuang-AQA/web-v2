@@ -424,7 +424,7 @@ export default function ReportGenerator() {
     return () => {
       canceled = true
     }
-  }, [projectParam, reloadEpoch, page, pageSize, name, sortBy, sortDir])
+  }, [projectParam, reloadEpoch, page, pageSize, name, sortBy, sortDir, lastRunsKey])
   useEffect(() => {
     if (!initRunId) return
     let canceled = false
@@ -466,7 +466,7 @@ export default function ReportGenerator() {
     return () => {
       canceled = true
     }
-  }, [initRunId, statusFilter])
+  }, [initRunId, statusFilter, lastCasesKey])
   useEffect(() => {
     const onReload = async () => {
       setReloadEpoch((x) => x + 1)
@@ -492,7 +492,6 @@ export default function ReportGenerator() {
     return () => {
       window.removeEventListener('global:reload', onReload as EventListener)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRunId, initRunId, statusFilter])
 
   const updateQuery = (patch: Record<string, unknown>) => {
