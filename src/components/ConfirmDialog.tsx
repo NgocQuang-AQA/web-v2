@@ -37,20 +37,31 @@ export default function ConfirmDialog({
     </div>
   )
   return (
-    <Modal open={open} title="" onClose={onCancel} unmountOnClose={false}>
-      <div className="flex flex-col items-center text-center gap-4">
+    <Modal
+      open={open}
+      title=""
+      onClose={onCancel}
+      unmountOnClose={false}
+      hideHeader
+      className="w-full max-w-sm h-auto"
+    >
+      <div className="flex flex-col items-center text-center gap-4 py-2">
         {ico}
         <div className="text-lg font-semibold text-gray-800">{title}</div>
         <div className="text-sm text-gray-500">{description}</div>
-        <div className="flex items-center gap-3 mt-2">
+        <div className="flex items-center gap-3 mt-4 w-full">
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 focus:ring-rose-500 flex-1 justify-center"
             onClick={onCancel}
           >
             {cancelText}
           </button>
-          <button type="button" className="btn btn-primary" onClick={onConfirm}>
+          <button
+            type="button"
+            className="btn btn-primary flex-1 justify-center"
+            onClick={onConfirm}
+          >
             {confirmText}
           </button>
         </div>
