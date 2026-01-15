@@ -5,6 +5,7 @@ import { exec } from 'child_process';
 import PerformanceTest from '../models/PerformanceTest.js';
 import { Notice } from '../models/Notice.js';
 import { fileURLToPath } from 'url';
+import { sendSlackNotice } from '../services/slack.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -282,6 +283,7 @@ router.post('/run', async (req, res) => {
                           const content = `Performance Test "${testRecord.apiName}" completed: ${samples} samples, avg ${avg}ms, error ${percent}%`;
                           const doc = new Notice({ content, time: new Date(), namepath: testRecord.targetUrl });
                           await doc.save();
+                          await sendSlackNotice(content);
                         } catch (e) {
                           console.error('Failed to create notice for performance test:', e);
                         }
@@ -294,6 +296,12 @@ router.post('/run', async (req, res) => {
                 console.error(`[ERROR] JMeter not found. Performance test ${testRecord._id} cannot be executed without JMeter.`);
                 testRecord.status = 'FAILED';
                 testRecord.errorMessage = 'JMeter is not installed or not available in PATH';
+                try {
+                  const content = `Performance Test "${testRecord.apiName}" failed: JMeter not available`;
+                  const doc = new Notice({ content, time: new Date(), namepath: testRecord.targetUrl });
+                  await doc.save();
+                  await sendSlackNotice(content);
+                } catch {}
                 await testRecord.save();
             }
 
@@ -301,6 +309,12 @@ router.post('/run', async (req, res) => {
             console.error("Async Execution Error:", innerError);
             testRecord.status = 'FAILED';
             testRecord.errorMessage = innerError.message;
+            try {
+              const content = `Performance Test "${testRecord.apiName}" failed: ${innerError.message}`;
+              const doc = new Notice({ content, time: new Date(), namepath: testRecord.targetUrl });
+              await doc.save();
+              await sendSlackNotice(content);
+            } catch {}
             await testRecord.save();
         }
     })();

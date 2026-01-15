@@ -371,18 +371,6 @@ export default function ReportGenerator() {
     return s
   }
 
-  const storageKey = 'sdet-run-flags'
-  const setFlag = (env: string, running: boolean) => {
-    try {
-      const s = localStorage.getItem(storageKey)
-      const obj = s ? (JSON.parse(s) as Record<string, boolean>) : {}
-      const next = { ...obj, [env]: running }
-      localStorage.setItem(storageKey, JSON.stringify(next))
-    } catch {
-      void 0
-    }
-  }
-
   const mainTabs = useMemo(() => {
     return [
       { key: 'global' as const, label: 'Global' },
@@ -634,7 +622,6 @@ export default function ReportGenerator() {
 
   const triggerRun = async () => {
     setRunning(true)
-    setFlag(envParam, true)
     const res = await apiJson<RunResponse>(
       `/api/run?env=${encodeURIComponent(envParam)}`
     )
@@ -644,7 +631,6 @@ export default function ReportGenerator() {
           detail: { message: 'Failed to trigger test run.' },
         })
       )
-      setFlag(envParam, false)
     } else {
       const okMsg =
         String(res?.notice?.content || '').trim() || 'Run test completed'
@@ -759,7 +745,7 @@ export default function ReportGenerator() {
             </div>
             <button
               type="button"
-              className={`btn btn-primary ${running ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`btn btn-primary flex items-center gap-2 ${running ? 'opacity-50 cursor-not-allowed' : ''}`}
               disabled={running}
               onClick={() => {
                 if (envParam === 'live' || envParam === 'cnlive')
@@ -770,9 +756,10 @@ export default function ReportGenerator() {
               {running ? (
                 <>
                   <svg
-                    className="mr-3 size-5 w-5 h-5 animate-spin"
-                    viewBox="0 0 24 24"
+                    className="animate-spin h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
                     fill="none"
+                    viewBox="0 0 24 24"
                   >
                     <circle
                       className="opacity-25"
@@ -785,7 +772,7 @@ export default function ReportGenerator() {
                     <path
                       className="opacity-75"
                       fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
                   <span className="font-medium">Processing…</span>
@@ -798,7 +785,7 @@ export default function ReportGenerator() {
                     viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
-                    className="mr-1 w-5 h-5"
+                    className="w-5 h-5"
                   >
                     <path
                       strokeLinecap="round"

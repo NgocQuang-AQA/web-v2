@@ -3,6 +3,7 @@ import cors from 'cors'
 import morgan from 'morgan'
 import dotenv from 'dotenv'
 import path from 'node:path'
+import { fileURLToPath } from 'url'
 import { createRepos } from './repositories/repoFactory.js'
 import { createReportsRouter } from './routes/reports.js'
 import { createScanner } from './services/scanner.js'
@@ -17,6 +18,10 @@ import { createTestsRouter } from './routes/tests.js'
 import { createLogsRouter } from './routes/logs.js'
 import { createDashboardRouter } from './routes/dashboard.js'
 import performanceRouter from './routes/performance.js'
+import { startMonitor } from './services/monitor.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const envCandidates = [
   path.resolve(process.cwd(), '.env'),
@@ -25,6 +30,13 @@ const envCandidates = [
     : undefined,
   process.platform === 'darwin'
     ? path.resolve(process.cwd(), '.env.macos')
+    : undefined,
+  path.resolve(__dirname, '.env'),
+  process.platform === 'win32'
+    ? path.resolve(__dirname, '.env.windows')
+    : undefined,
+  process.platform === 'darwin'
+    ? path.resolve(__dirname, '.env.macos')
     : undefined,
   path.resolve(process.cwd(), '../.env'),
 ].filter(Boolean)
@@ -97,6 +109,9 @@ app.use('/api/performance', performanceRouter)
 
 const port = process.env.PORT || 4000
 const isDev = String(process.env.NODE_ENV || '').toLowerCase() !== 'production'
+
+// Start monitoring background jobs
+startMonitor(provider)
 
 async function listenWithFallback(p) {
   let tries = isDev ? 10 : 0
