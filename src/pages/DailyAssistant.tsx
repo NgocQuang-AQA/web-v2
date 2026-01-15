@@ -27,17 +27,6 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
   const [confirmAction, setConfirmAction] = useState<'run' | 'sync' | null>(
     null
   )
-  const storageKey = 'sdet-run-flags'
-  const setFlag = (env: string, isRunning: boolean) => {
-    try {
-      const s = localStorage.getItem(storageKey)
-      const obj = s ? (JSON.parse(s) as Record<string, boolean>) : {}
-      const next = { ...obj, [env]: isRunning }
-      localStorage.setItem(storageKey, JSON.stringify(next))
-    } catch {
-      void 0
-    }
-  }
 
   const runObj = (item.lastRun || {}) as Record<string, unknown>
   const sum = (runObj.summary || {}) as Record<string, unknown>
@@ -50,7 +39,6 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
   async function triggerRun() {
     setRunning(true)
     try {
-      setFlag(item.env, true)
       const res = await apiJson<{
         status?: string
         message?: string
@@ -66,13 +54,19 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
             detail: { message: msgErr },
           })
         )
-        setFlag(item.env, false)
+      } else {
+        const okMsg =
+          String(res?.notice?.content || '').trim() || 'Run test completed'
+        window.dispatchEvent(
+          new CustomEvent('global:alert', {
+            detail: { message: okMsg },
+          })
+        )
       }
     } catch {
       window.dispatchEvent(
         new CustomEvent('global:alert', { detail: { message: 'Error triggering run' } })
       )
-      setFlag(item.env, false)
     } finally {
       window.dispatchEvent(new CustomEvent('global:reload', { detail: { source: 'run', env: item.env } }))
       setRunning(false)
@@ -84,7 +78,6 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
     try {
       const envKey =
         item.env === 'cnlive' ? 'synccnlive' : item.env === 'live' ? 'synclive' : 'synclive'
-      setFlag(envKey, true)
       const qs = new URLSearchParams({ env: envKey, key: item.key })
       const res = await apiJson<{ status?: string; message?: string; notice?: { content?: string } | null }>(
         `/api/run?${qs.toString()}`
@@ -99,15 +92,19 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
             detail: { message: msgErr },
           })
         )
-        setFlag(envKey, false)
+      } else {
+        const okMsg =
+          String(res?.notice?.content || '').trim() || 'Sync completed'
+        window.dispatchEvent(
+          new CustomEvent('global:alert', {
+            detail: { message: okMsg },
+          })
+        )
       }
     } catch {
       window.dispatchEvent(
         new CustomEvent('global:alert', { detail: { message: 'Error syncing data' } })
       )
-      const envKey =
-        item.env === 'cnlive' ? 'synccnlive' : item.env === 'live' ? 'synclive' : 'synclive'
-      setFlag(envKey, false)
     } finally {
       window.dispatchEvent(new CustomEvent('global:reload', { detail: { source: 'sync', env: item.env } }))
       setSyncing(false)
@@ -163,9 +160,10 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
           {running ? (
             <>
               <svg
-                className="mr-1 w-5 h-5 animate-spin"
-                viewBox="0 0 24 24"
+                className="animate-spin h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
                 fill="none"
+                viewBox="0 0 24 24"
               >
                 <circle
                   className="opacity-25"
@@ -178,7 +176,7 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
                 <path
                   className="opacity-75"
                   fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
               <span className="font-medium">Processing…</span>
@@ -191,7 +189,7 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
-                className="mr-1 w-5 h-5"
+                className="w-5 h-5"
               >
                 <path
                   strokeLinecap="round"
@@ -218,9 +216,10 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
             {syncing ? (
               <>
                 <svg
-                  className="mr-1 w-5 h-5 animate-spin"
-                  viewBox="0 0 24 24"
+                  className="animate-spin h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
                   fill="none"
+                  viewBox="0 0 24 24"
                 >
                   <circle
                     className="opacity-25"
@@ -233,7 +232,7 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
                   <path
                     className="opacity-75"
                     fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
                 <span className="font-medium">Syncing…</span>
@@ -243,7 +242,7 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
-                  className="mr-1 w-5 h-5"
+                  className="w-5 h-5"
                   fill="currentColor"
                 >
                   <path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5 0 .34-.03.67-.1.99l1.53 1.53C18.81 14.79 19 13.92 19 13c0-3.87-3.13-7-7-7zm-7.41.41L3.17 7.83C2.39 9.07 2 10.49 2 12c0 3.87 3.13 7 7 7v3l4-4-4-4v3c-2.76 0-5-2.24-5-5 0-1.1.3-2.13.82-3.02L4.59 6.41z" />

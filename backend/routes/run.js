@@ -3,6 +3,9 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { spawn } from 'node:child_process'
 import { Notice } from '../models/Notice.js'
+import TestRun from '../models/TestRun.js'
+import { sendSlackNotice } from '../services/slack.js'
+import { summarizeDir } from '../services/scanner.js'
 
 function findScriptCandidates(env) {
   const root = process.cwd()
@@ -91,24 +94,59 @@ function friendlyNameFromKey(key) {
   return key || 'unknown-project'
 }
 
-function composeNoticeContent(env, namepath, logs, key) {
+async function composeNoticeContent(
+  env,
+  namepath,
+  logs,
+  key,
+  stats = null,
+  host = '10.13.60.71'
+) {
   const v = String(env || '').toLowerCase()
   const isQA = ['qa', 'cn', 'cnqa'].includes(v)
   const environment = isQA ? 'QA' : 'LIVE'
-  const folder = namepath
-    ? path.basename(namepath)
-    : friendlyNameFromKey(key)
+  const folder = namepath ? path.basename(namepath) : friendlyNameFromKey(key)
   if (v.startsWith('sync')) {
     const sum = parseSyncSummaryFromLogs(logs)
     if (sum) {
       return [
         `Sync data completed for ${folder} (${environment}).`,
         `Success: ${sum.success} • Failed: ${sum.failed} • Skipped: ${sum.skipped}`,
-      ].join(' ')
+      ].join('\n')
     }
     return `Sync data completed for ${folder} (${environment}).`
   }
-  return `Successfully ran automation tests for the ${folder} project in the ${environment} environment.`
+  try {
+    let counts, percent
+    if (stats) {
+      counts = stats.counts
+      percent = stats.percent
+    } else {
+      const summary = namepath ? await summarizeDir(namepath) : null
+      counts = summary?.counts || null
+      percent = summary?.percent ?? null
+    }
+
+    const passRate = percent != null ? `${percent}%` : 'N/A'
+    const passed = counts?.passed ?? null
+    const failed = counts?.failed ?? null
+    const error = counts?.broken ?? null
+    const runId = folder || 'unknown'
+    const link = `http://${host}:5173/agents/report?runId=${encodeURIComponent(
+      runId
+    )}`
+
+    const lines = [
+      `Successfully ran automation tests for ${folder} (${environment}).`,
+    ]
+    if (passed != null && failed != null && error != null) {
+      lines.push(`Pass rate: ${passRate}`)
+    }
+    lines.push(link)
+    return lines.join('\n')
+  } catch {
+    return `Successfully ran automation tests for the ${folder} project in the ${environment} environment.`
+  }
 }
 
 async function runScript(scriptPath) {
@@ -139,6 +177,8 @@ export function createRunRouter() {
     try {
       const env = String(req.query.env || '').trim()
       const key = String(req.query.key || '').trim()
+      const hostHeader = req.get('host') || '10.13.60.71'
+      const hostname = hostHeader.split(':')[0]
       if (!env) return res.status(400).json({ message: 'missing_env' })
 
       const candidates = findScriptCandidates(env)
@@ -151,10 +191,7 @@ export function createRunRouter() {
       const { code, logs } = await runScript(scriptPath)
       const sum = parseSyncSummaryFromLogs(logs)
       const namepath = parseNamepathFromLogs(logs)
-      const time = new Date()
-      const content = composeNoticeContent(env, namepath, logs, key)
-      const doc = new Notice({ content, time, namepath })
-      await doc.save()
+
       res.json({
         status:
           String(env).toLowerCase().startsWith('sync') && sum
@@ -163,8 +200,54 @@ export function createRunRouter() {
               ? 'ok'
               : 'error',
         exitCode: code,
-        notice: doc,
       })
+
+      // Run background task to send notice
+      ;(async () => {
+        try {
+          // Wait a bit before checking DB to allow async writes to complete
+          await new Promise((resolve) => setTimeout(resolve, 5000))
+
+          let stats = null
+          const runId = namepath
+            ? path.basename(namepath)
+            : friendlyNameFromKey(key)
+
+          // Poll DB for TestRun result (retry up to 12 times, 5s interval = 60s total)
+          if (!String(env).toLowerCase().startsWith('sync') && runId) {
+            for (let i = 0; i < 12; i++) {
+              try {
+                const tr = await TestRun.findOne({ runId }).sort({ createdAt: -1 })
+                if (tr) {
+                  stats = {
+                    counts: tr.counts,
+                    percent: tr.percent,
+                  }
+                  break
+                }
+              } catch (e) {
+                console.error('Error polling TestRun:', e)
+              }
+              await new Promise((resolve) => setTimeout(resolve, 5000))
+            }
+          }
+
+          const content = await composeNoticeContent(
+            env,
+            namepath,
+            logs,
+            key,
+            stats,
+            hostname
+          )
+          const time = new Date()
+          const doc = new Notice({ content, time, namepath })
+          await doc.save()
+          await sendSlackNotice(content)
+        } catch (err) {
+          console.error('Error sending delayed slack notice:', err)
+        }
+      })()
     } catch (e) {
       res.status(500).json({ message: 'internal_error' })
     }

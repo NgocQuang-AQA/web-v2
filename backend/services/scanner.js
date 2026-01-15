@@ -270,7 +270,7 @@ async function scanSerenityLatest(testRunId, rootDirOverride) {
   }
 }
 
-async function summarizeDir(dir) {
+export async function summarizeDir(dir) {
   try {
     dlog('summarizeDir', { dir })
     const files = await walk(dir)
