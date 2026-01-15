@@ -71,6 +71,28 @@ export default function GlobalAlert() {
   }, [show])
 
   useEffect(() => {
+    // Initialize baseline to avoid showing old notice immediately on start
+    const LS_KEY = 'last_notice_id'
+    const LS_TIME = 'last_notice_time'
+    const initBaseline = async () => {
+      try {
+        const existingId = localStorage.getItem(LS_KEY) || ''
+        const existingTime = localStorage.getItem(LS_TIME) || ''
+        if (existingId && existingTime) return
+        const doc = await apiJson<NoticeDoc | null>('/api/notices/latest')
+        if (!doc) return
+        const id = String(doc._id || doc.id || '')
+        const time = String(doc.time || '')
+        if (id) localStorage.setItem(LS_KEY, id)
+        if (time) localStorage.setItem(LS_TIME, time)
+      } catch {
+        void 0
+      }
+    }
+    initBaseline()
+  }, [])
+
+  useEffect(() => {
     let canceled = false
     const LS_KEY = 'last_notice_id'
     const LS_TIME = 'last_notice_time'

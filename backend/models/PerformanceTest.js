@@ -27,7 +27,14 @@ const performanceTestSchema = new mongoose.Schema({
     samples: { type: Number, default: 0 },
     avg: { type: Number, default: 0 },
     errorRate: { type: Number, default: 0 },
-    throughput: { type: Number, default: 0 }
+    throughput: { type: Number, default: 0 },
+    errorSample: {
+      responseCode: { type: String, default: '' },
+      responseMessage: { type: String, default: '' },
+      failureMessage: { type: String, default: '' },
+      url: { type: String, default: '' },
+      label: { type: String, default: '' }
+    }
   },
   resultFilePath: String,
   errorMessage: String,

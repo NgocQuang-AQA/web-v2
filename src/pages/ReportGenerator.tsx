@@ -7,6 +7,55 @@ import { sendLog } from '../lib/logger'
 import Loading from '../components/Loading'
 import NoData from '../assets/no-data-found_585024-42.avif'
 import ConfirmDialog from '../components/ConfirmDialog'
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  !!v && typeof v === 'object' && !Array.isArray(v)
+const extractArray = <T,>(input: unknown): T[] => {
+  if (Array.isArray(input)) return input as T[]
+  if (isRecord(input)) {
+    const obj = input as Record<string, unknown>
+    const items = obj.items
+    if (Array.isArray(items)) return items as T[]
+    const dataVal = obj.data
+    if (Array.isArray(dataVal)) return dataVal as T[]
+    if (isRecord(dataVal)) {
+      const di = (dataVal as Record<string, unknown>).items
+      if (Array.isArray(di)) return di as T[]
+    }
+  }
+  return []
+}
+const extractTotal = (input: unknown, fallback: number): number => {
+  if (isRecord(input)) {
+    const obj = input as Record<string, unknown>
+    const t = obj.total
+    if (typeof t === 'number' && Number.isFinite(t)) return t
+    const dataVal = obj.data
+    if (isRecord(dataVal)) {
+      const dt = (dataVal as Record<string, unknown>).total
+      if (typeof dt === 'number' && Number.isFinite(dt)) return dt
+    }
+  }
+  return fallback
+}
+const extractCasesTree = (input: unknown): Record<string, unknown> => {
+  if (isRecord(input)) {
+    const obj = input as Record<string, unknown>
+    const candidates = [
+      obj.items,
+      obj.data && (obj.data as Record<string, unknown>).items,
+      obj.tree,
+      obj.data && (obj.data as Record<string, unknown>).tree,
+    ].filter(Boolean)
+    for (const c of candidates) {
+      if (isRecord(c)) return c as Record<string, unknown>
+      if (Array.isArray(c))
+        return { all: c as unknown[] } as unknown as Record<string, unknown>
+    }
+  } else if (Array.isArray(input)) {
+    return { all: input as unknown[] } as unknown as Record<string, unknown>
+  }
+  return {}
+}
 type RunResponse = {
   status?: string
   exitCode?: number
@@ -312,7 +361,7 @@ export default function ReportGenerator() {
     const data = await apiJson<{ items?: Record<string, unknown>[] }>(
       `/api/tests/steps?${qs.toString()}`
     )
-    setStepsItems(Array.isArray(data?.items) ? data!.items! : [])
+    setStepsItems(extractArray<Record<string, unknown>>(data))
     setStepsLoading(false)
   }
   const mapUiStatusToApi = (
@@ -363,24 +412,9 @@ export default function ReportGenerator() {
     return sub === 'cn' ? 'cnlive' : 'cnqa'
   }, [view, sub])
   const projectParam = useMemo(() => current.collection, [current])
-  const [lastRunsKey, setLastRunsKey] = useState<string>('')
-  const [lastCasesKey, setLastCasesKey] = useState<string>('')
   useEffect(() => {
     let canceled = false
     async function loadRuns() {
-      const reqKey = JSON.stringify({
-        projectParam,
-        page,
-        pageSize,
-        name: String(name || '').trim(),
-        sortBy,
-        sortDir,
-      })
-      if (lastRunsKey === reqKey) {
-        setRunsLoading(false)
-        return
-      }
-      setLastRunsKey(reqKey)
       setRunsLoading(true)
       setRunsError(null)
       const qs = new URLSearchParams({
@@ -395,10 +429,9 @@ export default function ReportGenerator() {
         `/api/tests/runs?${qs.toString()}`
       )
       if (!canceled) {
-        const arr = Array.isArray(data?.items)
-          ? (data?.items as TestRunDoc[])
-          : []
-        setRunsTotal(Number(data?.total || 0))
+        const arr = extractArray<TestRunDoc>(data)
+        const totalVal = extractTotal(data, arr.length)
+        setRunsTotal(totalVal)
         const getVal = (it: TestRunDoc) => {
           if (sortBy === 'startTime') {
             const p = parseStartTime(String(it.startTime || ''))
@@ -424,17 +457,11 @@ export default function ReportGenerator() {
     return () => {
       canceled = true
     }
-  }, [projectParam, reloadEpoch, page, pageSize, name, sortBy, sortDir, lastRunsKey])
+  }, [projectParam, reloadEpoch, page, pageSize, name, sortBy, sortDir])
   useEffect(() => {
     if (!initRunId) return
     let canceled = false
     async function initLoad() {
-      const reqKey = JSON.stringify({
-        initRunId,
-        statusFilter,
-      })
-      if (lastCasesKey === reqKey) return
-      setLastCasesKey(reqKey)
       setSelectedRunId(initRunId)
       setCasesLoading(true)
       setCasesError(null)
@@ -457,8 +484,8 @@ export default function ReportGenerator() {
         items?: Record<string, unknown>
       }>(`/api/tests/cases?${qs.toString()}`)
       if (!canceled) {
-        if (data && data.items) setCasesTree(data.items)
-        else setCasesTree({})
+        const tree = extractCasesTree(data)
+        setCasesTree(tree)
         setCasesLoading(false)
       }
     }
@@ -466,7 +493,7 @@ export default function ReportGenerator() {
     return () => {
       canceled = true
     }
-  }, [initRunId, statusFilter, lastCasesKey])
+  }, [initRunId, statusFilter])
   useEffect(() => {
     const onReload = async () => {
       setReloadEpoch((x) => x + 1)
@@ -484,8 +511,7 @@ export default function ReportGenerator() {
         total?: number
         items?: Record<string, unknown>
       }>(`/api/tests/cases?${qs.toString()}`)
-      if (data && data.items) setCasesTree(data.items)
-      else setCasesTree({})
+      setCasesTree(extractCasesTree(data))
       setCasesLoading(false)
     }
     window.addEventListener('global:reload', onReload as EventListener)
@@ -619,6 +645,14 @@ export default function ReportGenerator() {
         })
       )
       setFlag(envParam, false)
+    } else {
+      const okMsg =
+        String(res?.notice?.content || '').trim() || 'Run test completed'
+      window.dispatchEvent(
+        new CustomEvent('global:alert', {
+          detail: { message: okMsg },
+        })
+      )
     }
     const stats = await apiJson<unknown>('/api/reports/stats')
     if (stats != null) {
@@ -956,8 +990,7 @@ export default function ReportGenerator() {
                             total?: number
                             items?: Record<string, unknown>
                           }>(`/api/tests/cases?${qs.toString()}`)
-                          if (data && data.items) setCasesTree(data.items)
-                          else setCasesTree({})
+                          setCasesTree(extractCasesTree(data))
                           setCasesLoading(false)
                         }}
                       >
@@ -1060,8 +1093,7 @@ export default function ReportGenerator() {
                     total?: number
                     items?: Record<string, unknown>
                   }>(`/api/tests/cases?${qs.toString()}`)
-                  if (data && data.items) setCasesTree(data.items)
-                  else setCasesTree({})
+                  setCasesTree(extractCasesTree(data))
                   setCasesLoading(false)
                 }}
                 className="select px-2 py-1 text-xs"

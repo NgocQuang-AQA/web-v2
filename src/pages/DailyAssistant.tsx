@@ -67,6 +67,14 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
           })
         )
         setFlag(item.env, false)
+      } else {
+        const okMsg =
+          String(res?.notice?.content || '').trim() || 'Run test completed'
+        window.dispatchEvent(
+          new CustomEvent('global:alert', {
+            detail: { message: okMsg },
+          })
+        )
       }
     } catch {
       window.dispatchEvent(
@@ -100,6 +108,14 @@ function RunCard({ item }: { item: DashboardStats['projectStats'][0] }) {
           })
         )
         setFlag(envKey, false)
+      } else {
+        const okMsg =
+          String(res?.notice?.content || '').trim() || 'Sync completed'
+        window.dispatchEvent(
+          new CustomEvent('global:alert', {
+            detail: { message: okMsg },
+          })
+        )
       }
     } catch {
       window.dispatchEvent(

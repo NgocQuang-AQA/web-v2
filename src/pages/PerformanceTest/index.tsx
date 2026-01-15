@@ -46,11 +46,39 @@ interface PerfTestDetail {
     avg?: number
     errorRate?: number
     throughput?: number
+    errorSample?: {
+      responseCode?: string
+      responseMessage?: string
+      failureMessage?: string
+      url?: string
+      label?: string
+    }
   }
   resultFilePath?: string
   errorMessage?: string
   __v?: number
   [key: string]: unknown
+}
+
+type JtlRow = {
+  timeStamp: number
+  elapsed: number
+  label: string
+  responseCode: string
+  responseMessage: string
+  threadName: string
+  dataType: string
+  success: boolean
+  failureMessage: string
+  bytes: number
+  sentBytes: number
+  grpThreads: number
+  allThreads: number
+  url: string
+  latency: number
+  idleTime: number
+  connect: number
+  isFail: boolean
 }
 
 export default function PerformanceTest() {
@@ -66,6 +94,10 @@ export default function PerformanceTest() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [total, setTotal] = useState(0)
+  const [jtlLoading, setJtlLoading] = useState(false)
+  const [jtlError, setJtlError] = useState<string | null>(null)
+  const [jtlItems, setJtlItems] = useState<JtlRow[]>([])
+  const [showOnlyFail, setShowOnlyFail] = useState(false)
 
   const loadTests = useCallback(async () => {
     setLoading(true)
@@ -114,15 +146,23 @@ export default function PerformanceTest() {
     setDetailError(null)
     setSelectedTestId(testId)
     setSelectedTestData(null)
+    setJtlItems([])
+    setJtlError(null)
+    setJtlLoading(true)
     try {
       const data = await apiJson<PerfTestDetail>(
         `/api/performance/${encodeURIComponent(testId)}`
       )
       setSelectedTestData(data)
+      const rows = await apiJson<{ total: number; items: JtlRow[] }>(
+        `/api/performance/${encodeURIComponent(testId)}/results`
+      )
+      setJtlItems(Array.isArray(rows?.items) ? rows!.items! : [])
     } catch (e) {
       setDetailError(String(e))
     } finally {
       setDetailLoading(false)
+      setJtlLoading(false)
     }
   }
 
@@ -161,41 +201,41 @@ export default function PerformanceTest() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-50 border-b border-gray-200">
+              <table className="table">
+                <thead>
                   <tr>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Target</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Avg Latency</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Error Rate</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Created At</th>
+                    <th>Name</th>
+                    <th>Target</th>
+                    <th>Status</th>
+                    <th>Avg Latency</th>
+                    <th>Error Rate</th>
+                    <th>Created At</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {tests.map((test) => (
                     <tr
                       key={test._id}
-                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                      className="cursor-pointer"
                       onClick={() => handleOpenDetail(test._id)}
                     >
-                      <td className="px-6 py-4 font-medium text-gray-900">{test.apiName}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="text-gray-900">{test.apiName}</td>
+                      <td className="text-gray-600">
                         <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded mr-2">{test.method}</span>
                         <span className="truncate max-w-[200px] inline-block align-bottom">{test.targetUrl}</span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td>
                         <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(test.status)}`}>
                           {test.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="text-gray-600">
                         {test.summary?.avg ? `${test.summary.avg}ms` : '-'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
+                      <td className="text-gray-600">
                         {test.summary?.errorRate ? `${(test.summary.errorRate * 100).toFixed(1)}%` : '-'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
+                      <td className="text-gray-500">
                         {new Date(test.createdAt).toLocaleDateString()}
                       </td>
                     </tr>
@@ -373,6 +413,39 @@ export default function PerformanceTest() {
                       <div className="text-gray-900 font-medium">{selectedTestData.summary?.throughput ?? 0} req/s</div>
                     </div>
                   </div>
+                  {selectedTestData.summary?.errorSample && (
+                    <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                      <div className="text-xs font-semibold text-amber-800 mb-1">
+                        API Error Detail (from JMeter results)
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-amber-900">
+                        <div>
+                          <span className="font-medium">Code:</span>{' '}
+                          {selectedTestData.summary.errorSample.responseCode || 'N/A'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Label:</span>{' '}
+                          {selectedTestData.summary.errorSample.label || 'N/A'}
+                        </div>
+                        <div className="md:col-span-2">
+                          <div className="font-medium">Message:</div>
+                          <div className="mt-0.5">
+                            {selectedTestData.summary.errorSample.responseMessage ||
+                              selectedTestData.summary.errorSample.failureMessage ||
+                              'N/A'}
+                          </div>
+                        </div>
+                        {selectedTestData.summary.errorSample.url && (
+                          <div className="md:col-span-2">
+                            <div className="font-medium">URL:</div>
+                            <div className="mt-0.5 font-mono bg-white rounded-lg p-2 border border-amber-200 overflow-x-auto">
+                              {selectedTestData.summary.errorSample.url}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -408,6 +481,86 @@ export default function PerformanceTest() {
                         {selectedTestData.jmeterConfig?.path ?? '-'}
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold text-gray-800">JMeter Results</h3>
+                    <label className="flex items-center gap-2 text-xs text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={showOnlyFail}
+                        onChange={(e) => setShowOnlyFail(e.target.checked)}
+                      />
+                      <span>Chỉ hiển thị lỗi (responseCode != 200)</span>
+                    </label>
+                  </div>
+                  <div className="rounded-2xl bg-white border border-gray-200 overflow-hidden">
+                    {jtlLoading ? (
+                      <div className="p-4">
+                        <Loading />
+                      </div>
+                    ) : jtlError ? (
+                      <div className="p-3 text-sm text-rose-600">{jtlError}</div>
+                    ) : jtlItems.length === 0 ? (
+                      <div className="p-6 text-sm text-gray-500">No JMeter result entries</div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="table">
+                          <thead>
+                            <tr className="text-left text-gray-600">
+                              <th>#</th>
+                              <th>Timestamp</th>
+                              <th>Elapsed</th>
+                              <th>Label</th>
+                              <th>Response Code</th>
+                              <th>Response Message</th>
+                              <th>Thread</th>
+                              <th>Data Type</th>
+                              <th>Success</th>
+                              <th>Failure</th>
+                              <th>Bytes</th>
+                              <th>Sent</th>
+                              <th>Grp</th>
+                              <th>All</th>
+                              <th>URL</th>
+                              <th>Latency</th>
+                              <th>Idle</th>
+                              <th>Connect</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(showOnlyFail ? jtlItems.filter((x) => x.isFail) : jtlItems).map((row, idx) => {
+                              const ts = new Date(row.timeStamp).toISOString()
+                              const failClass = row.isFail ? 'text-rose-700 font-medium' : 'text-gray-800'
+                              return (
+                                <tr key={`${row.timeStamp}-${idx}`} className="border-t border-gray-100">
+                                  <td className="text-gray-500">{idx + 1}</td>
+                                  <td>{ts}</td>
+                                  <td>{row.elapsed} ms</td>
+                                  <td>{row.label}</td>
+                                  <td className={failClass}>{row.responseCode}</td>
+                                  <td>{row.responseMessage}</td>
+                                  <td>{row.threadName}</td>
+                                  <td>{row.dataType}</td>
+                                  <td>{row.success ? 'true' : 'false'}</td>
+                                  <td>{row.failureMessage || 'N/A'}</td>
+                                  <td>{row.bytes}</td>
+                                  <td>{row.sentBytes}</td>
+                                  <td>{row.grpThreads}</td>
+                                  <td>{row.allThreads}</td>
+                                  <td className="font-mono max-w-[360px] truncate">{row.url}</td>
+                                  <td>{row.latency} ms</td>
+                                  <td>{row.idleTime} ms</td>
+                                  <td>{row.connect} ms</td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 </div>
 

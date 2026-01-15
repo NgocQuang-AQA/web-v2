@@ -12,6 +12,15 @@ type Header = {
   value: string
 }
 
+type PerfTestDetailLocal = {
+  apiName?: string
+  status?: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | string
+  summary?: {
+    samples?: number
+    avg?: number
+    errorRate?: number
+  }
+}
 export default function CreateTestModal({ open, onClose, onSuccess }: Props) {
   const [name, setName] = useState('')
   const [url, setUrl] = useState('')
@@ -139,11 +148,22 @@ export default function CreateTestModal({ open, onClose, onSuccess }: Props) {
       
       const testId = res?.testId
       if (testId) {
+        let lastDoc: PerfTestDetailLocal | null = null
         for (let i = 0; i < 60; i++) {
-          const doc = await apiJson<{ status?: string }>(`/api/performance/${encodeURIComponent(testId)}`)
+          const doc = await apiJson<PerfTestDetailLocal>(`/api/performance/${encodeURIComponent(testId)}`)
+          lastDoc = doc
           const st = String(doc?.status || '')
           if (st === 'COMPLETED' || st === 'FAILED') break
           await new Promise((r) => setTimeout(r, 2000))
+        }
+        if (lastDoc && (lastDoc.status === 'COMPLETED' || lastDoc.status === 'FAILED')) {
+          const sum = lastDoc.summary || {}
+          const samples = Number(sum?.samples || 0)
+          const avg = Number(sum?.avg || 0)
+          const errRate = Number(sum?.errorRate || 0)
+          const percent = (errRate * 100).toFixed(2)
+          const okMsg = `Performance Test "${String(lastDoc.apiName || name)}" ${String(lastDoc.status || '')}: ${samples} samples, avg ${avg}ms, error ${percent}%`
+          window.dispatchEvent(new CustomEvent('global:alert', { detail: { message: okMsg } }))
         }
         onSuccess()
         onClose()
