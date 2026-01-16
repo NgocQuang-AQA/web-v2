@@ -1,4 +1,5 @@
 import { Notice } from '../models/Notice.js'
+import { LogMonitor } from '../models/LogMonitor.js'
 import mongoose from 'mongoose'
 import { sendSlackNotice } from './slack.js'
 
@@ -109,6 +110,25 @@ async function runTask(task) {
         time: new Date(),
         namepath: task.id,
       }).save()
+      await LogMonitor.create({
+        url,
+        method,
+        headers,
+        requestBody:
+          typeof body === 'string'
+            ? (() => {
+                try {
+                  return JSON.parse(body)
+                } catch {
+                  return body
+                }
+              })()
+            : body,
+        responseBody: resBody,
+        status,
+        taskId: task.id,
+        errorMessage: msg,
+      })
       await sendSlackNotice(content)
     } else {
       // Log success to console so user knows it is working
@@ -122,6 +142,20 @@ async function runTask(task) {
       time: new Date(),
       namepath: task.id,
     }).save()
+    await LogMonitor.create({
+      url: typeof task.url === 'function' ? task.url() : task.url || null,
+      method: task.method || 'GET',
+      headers:
+        typeof task.headers === 'function'
+          ? task.headers()
+          : task.headers || {},
+      requestBody:
+        typeof task.body === 'function' ? task.body() : task.body || null,
+      responseBody: null,
+      status: null,
+      taskId: task.id,
+      errorMessage: e.message,
+    })
     await sendSlackNotice(content)
   }
 }

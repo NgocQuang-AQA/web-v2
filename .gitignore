@@ -29,3 +29,5 @@ backend/.env
 backend/.env.*
 backend/jmeter-results/*
 backend/jmeter-templates/*
+.agent
+.agent/*
